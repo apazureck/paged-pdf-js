@@ -1,6 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const externalServer = process.env.PAGED_PDF_EXTERNAL_SERVER === "1";
+const browserExecutablePath =
+  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 export default defineConfig({
   testDir: "./test/e2e",
@@ -13,7 +15,11 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:4173",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    video: "retain-on-failure"
+    video: "retain-on-failure",
+    launchOptions:
+      browserExecutablePath === undefined
+        ? undefined
+        : { executablePath: browserExecutablePath }
   },
   projects: [
     {

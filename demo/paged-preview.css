@@ -1,0 +1,46 @@
+:root {
+  background: #dbe3e4;
+  color: #21343c;
+  font-family: Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+#preview {
+  min-height: 100vh;
+  padding: 20px;
+}
+
+#preview:empty::before {
+  display: block;
+  padding: 32px;
+  color: #64767c;
+  text-align: center;
+  content: "Waiting for an example...";
+}
+
+.pagedjs_pages {
+  width: max-content;
+  margin: 0 auto !important;
+}
+
+.pagedjs_page {
+  margin: 0 0 24px !important;
+  box-shadow: 0 14px 38px rgb(24 47 57 / 20%);
+}
+
+.pagedjs_sheet {
+  background: white;
+}

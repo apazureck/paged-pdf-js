@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Compare Paged.js HTML pagination with direct jsPDF output."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' blob:; connect-src 'self' ws: wss:; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Paged.js feature lab | paged-pdf-js</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/gallery.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="paged-pdf-js home">
+        <span aria-hidden="true">P</span>
+        paged-pdf-js
+      </a>
+      <nav class="header-nav" aria-label="Site navigation">
+        <a href="/">Playground</a>
+        <a href="/gallery.html" aria-current="page">Feature lab</a>
+        <a
+          class="github-link"
+          href="https://github.com/apazureck/paged-pdf-js"
+          rel="noreferrer"
+        >
+          GitHub
+        </a>
+      </nav>
+    </header>
+
+    <main class="gallery-main">
+      <section class="gallery-intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Local print laboratory</p>
+          <h1 id="page-title">Paged.js feature lab</h1>
+        </div>
+        <div class="intro-copy">
+          <p>
+            Inspect one source document through two outputs: the real paginated
+            HTML produced by Paged.js and the PDF authored from that exact DOM.
+          </p>
+          <a
+            href="https://pagedjs.org/en/documentation/14-supported-feature-of-the-w3c-specifications/"
+            rel="noreferrer"
+          >
+            Paged.js support reference
+          </a>
+        </div>
+      </section>
+
+      <div class="gallery-layout">
+        <aside class="catalog">
+          <div class="catalog-heading">
+            <p class="eyebrow">Examples</p>
+            <p>Choose a feature family.</p>
+          </div>
+          <nav
+            id="example-navigation"
+            aria-label="Paged.js examples"
+          ></nav>
+          <div class="legend" aria-label="Compatibility legend">
+            <p><span class="support support-match">Close match</span> Core geometry is reproduced.</p>
+            <p><span class="support support-partial">Partial</span> Compare known generated-content differences.</p>
+            <p><span class="support support-pagedjs-only">Paged.js only</span> Deliberate stress case.</p>
+          </div>
+        </aside>
+
+        <section class="lab" aria-labelledby="example-title">
+          <header class="example-header">
+            <div>
+              <div class="example-kicker">
+                <span id="example-support" class="support"></span>
+                <span id="example-index"></span>
+              </div>
+              <h2 id="example-title"></h2>
+              <p id="example-summary"></p>
+              <ul id="feature-tags" class="feature-tags" aria-label="Features"></ul>
+            </div>
+            <div class="run-controls">
+              <button id="rerun-button" class="primary" type="button">
+                Re-run proof
+              </button>
+              <button id="download-button" type="button" disabled>
+                Download PDF
+              </button>
+              <div class="status-row" aria-live="polite">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span data-testid="status" id="status">Preparing example...</span>
+              </div>
+              <p id="error" class="error" role="alert" hidden></p>
+            </div>
+          </header>
+
+          <div class="proof-grid">
+            <section class="proof-card source-card" aria-labelledby="source-title">
+              <header class="proof-header">
+                <div>
+                  <span class="proof-number">01</span>
+                  <h3 id="source-title">Source document</h3>
+                </div>
+                <div class="source-tabs" role="tablist" aria-label="Source views">
+                  <button
+                    id="rendered-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="rendered-panel"
+                    data-source-tab="rendered"
+                  >
+                    Rendered
+                  </button>
+                  <button
+                    id="html-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="html-panel"
+                    data-source-tab="html"
+                  >
+                    HTML
+                  </button>
+                  <button
+                    id="css-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="css-panel"
+                    data-source-tab="css"
+                  >
+                    CSS
+                  </button>
+                </div>
+              </header>
+              <div class="proof-surface source-surface">
+                <div id="rendered-panel" role="tabpanel" aria-labelledby="rendered-tab">
+                  <iframe
+                    id="source-preview"
+                    title="Continuous source preview"
+                    sandbox=""
+                  ></iframe>
+                </div>
+                <div
+                  id="html-panel"
+                  role="tabpanel"
+                  aria-labelledby="html-tab"
+                  hidden
+                >
+                  <pre><code id="html-source" data-testid="html-source"></code></pre>
+                </div>
+                <div
+                  id="css-panel"
+                  role="tabpanel"
+                  aria-labelledby="css-tab"
+                  hidden
+                >
+                  <pre><code id="css-source" data-testid="css-source"></code></pre>
+                </div>
+              </div>
+            </section>
+
+            <section class="proof-card paged-card" aria-labelledby="paged-title">
+              <header class="proof-header">
+                <div>
+                  <span class="proof-number">02</span>
+                  <h3 id="paged-title">Paged.js HTML preview</h3>
+                </div>
+                <span
+                  id="paged-preview-status"
+                  class="proof-meta"
+                  data-testid="paged-preview-status"
+                >
+                  Waiting
+                </span>
+              </header>
+              <div class="proof-surface">
+                <iframe
+                  id="paged-preview"
+                  src="/paged-preview.html"
+                  title="Paged.js HTML preview"
+                ></iframe>
+              </div>
+            </section>
+
+            <section class="proof-card pdf-card" aria-labelledby="pdf-title">
+              <header class="proof-header">
+                <div>
+                  <span class="proof-number">03</span>
+                  <h3 id="pdf-title">Rendered PDF</h3>
+                </div>
+                <span id="pdf-meta" class="proof-meta">Waiting</span>
+              </header>
+              <div class="proof-surface pdf-surface">
+                <div class="preview-placeholder" id="pdf-placeholder">
+                  <span aria-hidden="true">PDF</span>
+                  <p>The PDF will appear after pagination.</p>
+                </div>
+                <iframe
+                  id="pdf-preview"
+                  title="Generated PDF preview"
+                  hidden
+                ></iframe>
+              </div>
+            </section>
+          </div>
+
+          <section class="differences" aria-labelledby="differences-title">
+            <div>
+              <p class="eyebrow">What to compare</p>
+              <h3 id="differences-title">Expected differences</h3>
+            </div>
+            <ul id="compare-notes"></ul>
+          </section>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <p>
+        All examples run locally. The PDF pane is authored with jsPDF
+        primitives, never a page screenshot.
+      </p>
+    </footer>
+
+    <script type="module" src="/gallery.ts"></script>
+  </body>
+</html>
