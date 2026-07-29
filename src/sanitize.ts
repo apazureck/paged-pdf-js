@@ -13,6 +13,25 @@ const BLOCKED_ELEMENTS = [
   "style",
   "template"
 ].join(",");
+const BLOCKED_SVG_ELEMENTS = new Set([
+  "animate",
+  "animatemotion",
+  "animatetransform",
+  "discard",
+  "set"
+]);
+const SVG_CSS_URL_ATTRIBUTES = new Set([
+  "clip-path",
+  "cursor",
+  "fill",
+  "filter",
+  "marker",
+  "marker-end",
+  "marker-mid",
+  "marker-start",
+  "mask",
+  "stroke"
+]);
 const MAX_INPUT_CHARACTERS = 2_500_000;
 const MAX_DOM_ELEMENTS = 50_000;
 
@@ -206,12 +225,33 @@ function rewriteCssUrls(
   }
 }
 
+function isSvgElement(element: Element): boolean {
+  return element.namespaceURI === "http://www.w3.org/2000/svg";
+}
+
 function isResourceHref(element: Element, attributeName: string): boolean {
   return (
     attributeName === "href" &&
-    element.namespaceURI === "http://www.w3.org/2000/svg" &&
+    isSvgElement(element) &&
     SVG_RESOURCE_HREF_ELEMENTS.has(element.localName.toLowerCase())
   );
+}
+
+function rewriteSvgPresentationAttribute(
+  attributeName: string,
+  value: string,
+  policy: ResourcePolicy
+): string | undefined {
+  const declaration = rewriteCssUrls(
+    `${attributeName}:${value}`,
+    policy,
+    "declarationList"
+  );
+  if (declaration === undefined) {
+    return undefined;
+  }
+  const separator = declaration.indexOf(":");
+  return separator < 0 ? undefined : declaration.slice(separator + 1);
 }
 
 function sanitizeElement(element: Element, policy: ResourcePolicy): void {
@@ -225,6 +265,23 @@ function sanitizeElement(element: Element, policy: ResourcePolicy): void {
 
     if (attributeName === "is") {
       element.removeAttribute(attribute.name);
+      continue;
+    }
+
+    if (
+      isSvgElement(element) &&
+      SVG_CSS_URL_ATTRIBUTES.has(attributeName)
+    ) {
+      const value = rewriteSvgPresentationAttribute(
+        attributeName,
+        attribute.value,
+        policy
+      );
+      if (value === undefined) {
+        element.removeAttribute(attribute.name);
+      } else {
+        element.setAttribute(attribute.name, value);
+      }
       continue;
     }
 
@@ -301,6 +358,17 @@ function unwrapCustomElements(fragment: DocumentFragment): void {
   }
 }
 
+function removeBlockedSvgElements(fragment: DocumentFragment): void {
+  fragment.querySelectorAll("*").forEach((element) => {
+    if (
+      isSvgElement(element) &&
+      BLOCKED_SVG_ELEMENTS.has(element.localName.toLowerCase())
+    ) {
+      element.remove();
+    }
+  });
+}
+
 export function prepareStyleText(
   styleText: string,
   baseUrl?: string,
@@ -355,6 +423,7 @@ export function prepareHtmlInput(
   fragment.querySelectorAll(BLOCKED_ELEMENTS).forEach((element) => {
     element.remove();
   });
+  removeBlockedSvgElements(fragment);
   unwrapCustomElements(fragment);
   const policy = { baseUrl, allowedResourceOrigins };
   fragment.querySelectorAll("*").forEach((element) => {

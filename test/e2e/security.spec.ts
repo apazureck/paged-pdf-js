@@ -48,12 +48,23 @@ test("resource policy blocks CSS and SVG resource requests", async ({ page }) =>
       </svg>`,
       { styleText: "@page { size: A4; margin: 20mm; }" }
     );
+    const activeSvgResult = await api.htmlToPdf(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+        <image id="target" width="20" height="20"></image>
+        <set href="#target" attributeName="href"
+          to="https://tracker.invalid/smil.png" begin="0s"></set>
+        <rect width="20" height="20"
+          fill="url(https://tracker.invalid/paint.svg#p)"></rect>
+      </svg>`,
+      { styleText: "@page { size: A4; margin: 20mm; }" }
+    );
 
     return {
       escapedCssErrorCode,
       imageSetErrorCode,
       escapedImportErrorCode,
-      svgPages: svgResult.pageCount
+      svgPages: svgResult.pageCount,
+      activeSvgPages: activeSvgResult.pageCount
     };
   });
 
@@ -61,5 +72,6 @@ test("resource policy blocks CSS and SVG resource requests", async ({ page }) =>
   expect(result.imageSetErrorCode).toBe("INVALID_INPUT");
   expect(result.escapedImportErrorCode).toBe("INVALID_INPUT");
   expect(result.svgPages).toBe(1);
+  expect(result.activeSvgPages).toBe(1);
   expect(blockedRequests).toEqual([]);
 });
