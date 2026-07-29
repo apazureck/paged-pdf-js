@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  capturePage: vi.fn(),
+  buildVectorPage: vi.fn(),
   destroy: vi.fn(),
   preview: vi.fn(),
   waitForAssets: vi.fn(),
-  writeRasterPdf: vi.fn()
+  writeVectorPdf: vi.fn()
 }));
 
 vi.mock("../../src/assets.js", () => ({
   waitForAssets: mocks.waitForAssets
 }));
-vi.mock("../../src/capture.js", () => ({
-  capturePage: mocks.capturePage
+vi.mock("../../src/dom-renderer.js", () => ({
+  buildVectorPage: mocks.buildVectorPage
 }));
 vi.mock("../../src/pdf-writer.js", () => ({
-  writeRasterPdf: mocks.writeRasterPdf
+  writeVectorPdf: mocks.writeVectorPdf
 }));
 vi.mock("pagedjs", () => ({
   Previewer: class {
@@ -58,11 +58,10 @@ function appendPage(root: HTMLElement): void {
 describe("HTML conversion isolation", () => {
   beforeEach(() => {
     document.body.replaceChildren();
-    mocks.capturePage.mockReset().mockResolvedValue({
-      dataUrl: "data:image/png;base64,page",
+    mocks.buildVectorPage.mockReset().mockReturnValue({
       widthCssPixels: 100,
       heightCssPixels: 200,
-      format: "png"
+      commands: []
     });
     mocks.destroy.mockReset();
     mocks.preview.mockReset().mockImplementation(
@@ -73,7 +72,7 @@ describe("HTML conversion isolation", () => {
       ) => appendPage(host)
     );
     mocks.waitForAssets.mockReset().mockResolvedValue(undefined);
-    mocks.writeRasterPdf
+    mocks.writeVectorPdf
       .mockReset()
       .mockResolvedValue(new Uint8Array([37, 80, 68, 70, 45]));
   });

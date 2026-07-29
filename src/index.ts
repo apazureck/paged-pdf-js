@@ -4,7 +4,6 @@ export { htmlToPdf, pagedDomToPdf } from "./convert.js";
 export type {
   ConversionProgress,
   HtmlToPdfOptions,
-  ImageFormat,
   PagedDomToPdfOptions,
   PagedPdfErrorCode,
   PdfMetadata,

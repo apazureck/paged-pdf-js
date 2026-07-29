@@ -28,6 +28,7 @@ export default defineConfig({
       }
     },
     rollupOptions: {
+      external: ["canvg", "dompurify", "html2canvas"],
       output: {
         exports: "named",
         inlineDynamicImports: true

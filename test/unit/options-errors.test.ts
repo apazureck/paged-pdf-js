@@ -9,13 +9,7 @@ import { normalizeOptions } from "../../src/options.js";
 
 describe("option normalization", () => {
   it("applies safe defaults", () => {
-    expect(normalizeOptions()).toMatchObject({
-      pixelRatio: 2,
-      imageFormat: "png",
-      jpegQuality: 0.92,
-      backgroundColor: "#ffffff",
-      metadata: {}
-    });
+    expect(normalizeOptions()).toEqual({ metadata: {} });
   });
 
   it("preserves valid immutable options", () => {
@@ -25,42 +19,16 @@ describe("option normalization", () => {
 
     expect(
       normalizeOptions({
-        pixelRatio: 3,
-        imageFormat: "jpeg",
-        jpegQuality: 0.8,
-        backgroundColor: null,
         metadata,
         signal: controller.signal,
         onProgress
       })
     ).toEqual({
-      pixelRatio: 3,
-      imageFormat: "jpeg",
-      jpegQuality: 0.8,
-      backgroundColor: null,
       metadata,
       signal: controller.signal,
       onProgress
     });
   });
-
-  it.each([0, -1, 4.1, Number.NaN, Number.POSITIVE_INFINITY])(
-    "rejects invalid pixelRatio %s",
-    (pixelRatio) => {
-      expect(() => normalizeOptions({ pixelRatio })).toThrowError(
-        expect.objectContaining({ code: "INVALID_OPTION" })
-      );
-    }
-  );
-
-  it.each([0, -1, 1.1, Number.NaN, Number.POSITIVE_INFINITY])(
-    "rejects invalid jpegQuality %s",
-    (jpegQuality) => {
-      expect(() => normalizeOptions({ jpegQuality })).toThrowError(
-        expect.objectContaining({ code: "INVALID_OPTION" })
-      );
-    }
-  );
 });
 
 describe("error helpers", () => {

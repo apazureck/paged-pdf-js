@@ -11,9 +11,11 @@ const SAMPLE_HTML = `<article>
   <div class="rule"></div>
   <h2>First principles</h2>
   <p>
-    This demo sends your HTML through Paged.js, captures the generated pages,
-    and writes a PDF without uploading your content to a server.
+    This demo sends your HTML through Paged.js, translates the generated page
+    DOM into PDF drawing commands, and writes a PDF without uploading your
+    content to a server.
   </p>
+  <p>Learn more from the <a href="https://pagedjs.org/">Paged.js project</a>.</p>
   <blockquote>
     “The page is not just a container. It is part of the composition.”
   </blockquote>
@@ -24,7 +26,7 @@ const SAMPLE_HTML = `<article>
   <h1>Designed for the browser</h1>
   <p class="lede">
     The generated file has the same page count and physical dimensions as the
-    Paged.js layout.
+    Paged.js layout, while ordinary text stays selectable.
   </p>
   <ul>
     <li>Client-side and private by default</li>
@@ -61,18 +63,17 @@ h1 {
   margin: 0 0 8mm;
   color: #102f3d;
   font: 700 30pt/1.05 Georgia, serif;
-  letter-spacing: -0.025em;
 }
 h2 {
   margin-top: 12mm;
   color: #0b7189;
   font: 700 15pt/1.2 system-ui;
 }
+a { color: #0b7189; }
 .kicker {
   margin: 0 0 5mm;
   color: #e55336;
   font: 700 9pt system-ui;
-  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 .lede { color: #40515a; font-size: 15pt; }
@@ -126,7 +127,8 @@ function clearPreviewUrl(): void {
 }
 
 function showError(error: unknown): void {
-  const message = error instanceof Error ? error.message : "PDF generation failed.";
+  const message =
+    error instanceof Error ? error.message : "PDF generation failed.";
   errorMessage.textContent = message;
   errorMessage.hidden = false;
   status.textContent = "Generation failed";
@@ -148,7 +150,7 @@ async function generatePdf(): Promise<void> {
       },
       onProgress: ({ phase, page, totalPages }) => {
         if (phase === "render" && page !== undefined) {
-          status.textContent = `Rendering page ${page} of ${totalPages ?? "…"}`;
+          status.textContent = `Translating page ${page} of ${totalPages ?? "…"}`;
           return;
         }
         status.textContent =
@@ -164,7 +166,9 @@ async function generatePdf(): Promise<void> {
     placeholder.hidden = true;
     downloadButton.disabled = false;
     const pageLabel = result.pageCount === 1 ? "page" : "pages";
-    status.textContent = `${result.pageCount} ${pageLabel} · ${Math.ceil(result.bytes.byteLength / 1024)} KB`;
+    status.textContent = `${result.pageCount} ${pageLabel} · ${Math.ceil(
+      result.bytes.byteLength / 1024
+    )} KB`;
   } catch (error) {
     currentResult = undefined;
     showError(error);

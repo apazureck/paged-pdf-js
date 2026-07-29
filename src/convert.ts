@@ -1,14 +1,19 @@
 import { waitForAssets } from "./assets.js";
-import { capturePage } from "./capture.js";
+import type { VectorPage } from "./display-list.js";
+import { buildVectorPage } from "./dom-renderer.js";
 import {
   PagedPdfError,
   throwIfAborted,
   toPagedPdfError,
   waitWithAbort
 } from "./errors.js";
+import {
+  assertNoCssResourceUrls,
+  materializeImageResources
+} from "./image-materializer.js";
 import { normalizeOptions, type NormalizedOptions } from "./options.js";
 import { collectPagedSheets } from "./paged-dom.js";
-import { writeRasterPdf } from "./pdf-writer.js";
+import { writeVectorPdf } from "./pdf-writer.js";
 import { prepareHtmlInput, prepareStyleText } from "./sanitize.js";
 import type {
   HtmlToPdfOptions,
@@ -17,7 +22,7 @@ import type {
 } from "./types.js";
 
 const MAX_PAGES = 100;
-const MAX_TOTAL_CAPTURE_PIXELS = 200_000_000;
+const MAX_DOCUMENT_COMMANDS = 100_000;
 const MAX_OUTPUT_BYTES = 100_000_000;
 const CONVERSION_TIMEOUT_MS = 60_000;
 const OFFSCREEN_RENDER_STYLE = [
@@ -95,38 +100,37 @@ async function convertPagedDom(
     );
   }
 
-  normalized.onProgress?.({
-    phase: "assets",
-    totalPages: pages.length
-  });
+  normalized.onProgress?.({ phase: "assets", totalPages: pages.length });
   await waitForAssets(pagedRoot, normalized.signal);
-  let totalCapturePixels = 0;
-
-  async function* rasterPages() {
-    for (const [index, page] of pages.entries()) {
-      throwIfAborted(normalized.signal);
-      normalized.onProgress?.({
-        phase: "render",
-        page: index + 1,
-        totalPages: pages.length
-      });
-      const captured = await capturePage(page, normalized);
-      totalCapturePixels +=
-        captured.widthCssPixels *
-        normalized.pixelRatio *
-        captured.heightCssPixels *
-        normalized.pixelRatio;
-      if (totalCapturePixels > MAX_TOTAL_CAPTURE_PIXELS) {
+  const vectorPages: VectorPage[] = [];
+  let totalCommands = 0;
+  for (const [index, page] of pages.entries()) {
+    throwIfAborted(normalized.signal);
+    normalized.onProgress?.({
+      phase: "render",
+      page: index + 1,
+      totalPages: pages.length
+    });
+    try {
+      const vectorPage = await buildVectorPage(page, normalized.signal);
+      totalCommands += vectorPage.commands.length;
+      if (totalCommands > MAX_DOCUMENT_COMMANDS) {
         throw new PagedPdfError(
           "LIMIT_EXCEEDED",
-          `The document exceeds the ${MAX_TOTAL_CAPTURE_PIXELS.toLocaleString()} total capture pixel limit.`
+          `The document exceeds the ${MAX_DOCUMENT_COMMANDS.toLocaleString()} drawing command limit.`
         );
       }
-      yield captured;
+      vectorPages.push(vectorPage);
+    } catch (error) {
+      throw toPagedPdfError(
+        error,
+        "DOM_TRANSLATION_FAILED",
+        `Unable to translate Paged.js page ${index + 1} into PDF drawing commands.`
+      );
     }
   }
 
-  const bytes = await writeRasterPdf(rasterPages(), {
+  const bytes = await writeVectorPdf(vectorPages, {
     ...normalized.metadata,
     signal: normalized.signal,
     onPageWritten: (page) => {
@@ -137,7 +141,6 @@ async function convertPagedDom(
       });
     }
   });
-
   return createResult(bytes, pages.length);
 }
 
@@ -225,10 +228,16 @@ export async function htmlToPdf(
           options.baseUrl,
           options.allowedResourceOrigins
         );
+  if (preparedStyleText !== undefined) {
+    assertNoCssResourceUrls(preparedStyleText);
+  }
+
   const { container, host, shadowRoot } = createRenderBoundary();
   let previewer: PagedPreviewer | undefined;
+  let releaseImages = () => undefined;
 
   try {
+    releaseImages = await materializeImageResources(content, signal);
     normalized.onProgress?.({ phase: "paginate" });
     const pagedModule = await import("pagedjs");
     previewer = new pagedModule.Previewer() as PagedPreviewer;
@@ -259,5 +268,6 @@ export async function htmlToPdf(
   } finally {
     previewer?.polisher?.destroy();
     container.remove();
+    releaseImages();
   }
 }

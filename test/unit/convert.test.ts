@@ -1,21 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  capturePage: vi.fn(),
+  buildVectorPage: vi.fn(),
   destroy: vi.fn(),
   preview: vi.fn(),
   waitForAssets: vi.fn(),
-  writeRasterPdf: vi.fn()
+  writeVectorPdf: vi.fn()
 }));
 
 vi.mock("../../src/assets.js", () => ({
   waitForAssets: mocks.waitForAssets
 }));
-vi.mock("../../src/capture.js", () => ({
-  capturePage: mocks.capturePage
+vi.mock("../../src/dom-renderer.js", () => ({
+  buildVectorPage: mocks.buildVectorPage
 }));
 vi.mock("../../src/pdf-writer.js", () => ({
-  writeRasterPdf: mocks.writeRasterPdf
+  writeVectorPdf: mocks.writeVectorPdf
 }));
 vi.mock("pagedjs", () => ({
   Previewer: class {
@@ -33,6 +33,11 @@ vi.mock("pagedjs", () => ({
 import { htmlToPdf, pagedDomToPdf } from "../../src/convert.js";
 
 const PDF_BYTES = new Uint8Array([37, 80, 68, 70, 45]);
+const VECTOR_PAGE = {
+  widthCssPixels: 100,
+  heightCssPixels: 200,
+  commands: []
+} as const;
 
 function appendPage(root: HTMLElement): void {
   const page = document.createElement("div");
@@ -46,29 +51,19 @@ function appendPage(root: HTMLElement): void {
 describe("conversion orchestration", () => {
   beforeEach(() => {
     document.body.replaceChildren();
-    mocks.capturePage.mockReset();
+    mocks.buildVectorPage.mockReset().mockReturnValue(VECTOR_PAGE);
     mocks.destroy.mockReset();
     mocks.preview.mockReset();
     mocks.waitForAssets.mockReset().mockResolvedValue(undefined);
-    mocks.writeRasterPdf.mockReset().mockImplementation(
+    mocks.writeVectorPdf.mockReset().mockImplementation(
       async (
-        pages: AsyncIterable<unknown>,
+        pages: readonly unknown[],
         options: { onPageWritten?: (page: number) => void }
       ) => {
-        let page = 0;
-        for await (const _rasterPage of pages) {
-          page += 1;
-          options.onPageWritten?.(page);
-        }
+        pages.forEach((_page, index) => options.onPageWritten?.(index + 1));
         return PDF_BYTES;
       }
     );
-    mocks.capturePage.mockResolvedValue({
-      dataUrl: "data:image/png;base64,page",
-      widthCssPixels: 100,
-      heightCssPixels: 200,
-      format: "png"
-    });
     mocks.preview.mockImplementation(
       (
         _content: DocumentFragment,
@@ -93,7 +88,11 @@ describe("conversion orchestration", () => {
       root,
       expect.any(AbortSignal)
     );
-    expect(mocks.capturePage).toHaveBeenCalledTimes(2);
+    expect(mocks.buildVectorPage).toHaveBeenCalledTimes(2);
+    expect(mocks.writeVectorPdf).toHaveBeenCalledWith(
+      [VECTOR_PAGE, VECTOR_PAGE],
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
     expect(onProgress).toHaveBeenCalledWith({
       phase: "assets",
       totalPages: 2

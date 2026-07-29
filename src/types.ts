@@ -1,5 +1,3 @@
-export type ImageFormat = "png" | "jpeg";
-
 export type ProgressPhase = "paginate" | "assets" | "render" | "write";
 
 export interface ConversionProgress {
@@ -16,10 +14,6 @@ export interface PdfMetadata {
 }
 
 export interface PagedDomToPdfOptions {
-  readonly pixelRatio?: number;
-  readonly imageFormat?: ImageFormat;
-  readonly jpegQuality?: number;
-  readonly backgroundColor?: string | null;
   readonly metadata?: PdfMetadata;
   readonly signal?: AbortSignal;
   readonly onProgress?: (progress: ConversionProgress) => void;
@@ -43,7 +37,8 @@ export type PagedPdfErrorCode =
   | "ABORTED"
   | "ASSET_ERROR"
   | "BROWSER_REQUIRED"
-  | "CAPTURE_FAILED"
+  | "DOM_TRANSLATION_FAILED"
+  | "IMAGE_ERROR"
   | "INVALID_INPUT"
   | "INVALID_OPTION"
   | "INVALID_PAGE_SIZE"

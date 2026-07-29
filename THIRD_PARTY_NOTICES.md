@@ -3,9 +3,8 @@
 The distributed browser bundles include the following MIT-licensed projects:
 
 - [Paged.js](https://pagedjs.org/) — Copyright Paged.js contributors.
-- [pdf-lib](https://pdf-lib.js.org/) — Copyright Andrew Dillon.
-- [html2canvas](https://html2canvas.hertzen.com/) — Copyright Niklas von
-  Hertzen.
+- [jsPDF](https://github.com/parallax/jsPDF) — Copyright James Hall, yWorks
+  GmbH, and contributors.
 - [CSSTree](https://github.com/csstree/csstree) — Copyright Roman Dvornov and
   contributors.
 
