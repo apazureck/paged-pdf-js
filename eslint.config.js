@@ -7,6 +7,7 @@ export default tseslint.config(
     ignores: [
       "coverage/**",
       "demo-dist/**",
+      "demo/public/downloads/**",
       "dist/**",
       "node_modules/**",
       "playwright-report/**",
@@ -21,7 +22,7 @@ export default tseslint.config(
     },
     rules: {
       "no-undef": "error",
-      "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
+      "no-unused-vars": ["error", { argsIgnorePattern: "^_" }]
     }
   },
   {
@@ -42,8 +43,8 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
-          "argsIgnorePattern": "^_",
-          "varsIgnorePattern": "^_"
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_"
         }
       ],
       "no-control-regex": "off"

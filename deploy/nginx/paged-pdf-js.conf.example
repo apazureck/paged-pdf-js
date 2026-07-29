@@ -1,0 +1,58 @@
+server {
+    listen 80;
+    listen [::]:80;
+    server_name paged-pdf-js.pazureck.de;
+
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name paged-pdf-js.pazureck.de;
+
+    root /srv/paged-pdf-js/current;
+    index index.html;
+
+    ssl_certificate /etc/letsencrypt/live/paged-pdf-js.pazureck.de/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/paged-pdf-js.pazureck.de/privkey.pem;
+
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+
+    # Enable HSTS only after HTTPS works reliably for this hostname.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), geolocation=(), microphone=()" always;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location ~ ^/downloads/.*\.(?:js|cjs)$ {
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), geolocation=(), microphone=()" always;
+        expires 10m;
+        try_files $uri =404;
+    }
+
+    location ~ ^/assets/ {
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), geolocation=(), microphone=()" always;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+
+    autoindex off;
+}

@@ -6,10 +6,12 @@ layout, reads the geometry of the resulting page DOM, and writes PDF drawing
 primitives with [jsPDF](https://github.com/parallax/jsPDF).
 
 The authoring path does not take page screenshots, use html2canvas, or call
-`jsPDF.html()`. Text is written as PDF text and is therefore selectable and
+`jsPDF.html()`. Text is written as PDF text and remains selectable and
 searchable.
 
-[Try the demo](https://pagedpdf.pazureck.de) |
+[Try the playground](https://paged-pdf-js.pazureck.de) |
+[Read the developer manual](https://paged-pdf-js.pazureck.de/manual.html) |
+[Explore feature proofs](https://paged-pdf-js.pazureck.de/gallery.html) |
 [Report an issue](https://github.com/apazureck/paged-pdf-js/issues)
 
 ## How it works
@@ -77,22 +79,29 @@ const result = await htmlToPdf(
 downloadPdf(result.blob, "hello.pdf");
 ```
 
-### UNPKG
+## Browser downloads
 
-The standalone UMD build exposes `window.PagedPdf`:
+The current deployed browser bundles are available directly:
+
+- [Standalone UMD bundle](https://paged-pdf-js.pazureck.de/downloads/paged-pdf.min.js)
+- [ES module bundle](https://paged-pdf-js.pazureck.de/downloads/paged-pdf.js)
+- [Complete download and setup guide](https://paged-pdf-js.pazureck.de/manual.html#browser-bundles)
+
+The standalone build exposes `window.PagedPdf`:
 
 ```html
 <script src="https://unpkg.com/paged-pdf-js@0.1.0/dist/paged-pdf.min.js"></script>
 <script>
-  PagedPdf.htmlToPdf("<h1>Hello</h1>", {
+  window.PagedPdf.htmlToPdf("<h1>Hello</h1>", {
     styleText: "@page { size: A4; margin: 20mm; }"
   }).then((result) => {
-    PagedPdf.downloadPdf(result.blob, "hello.pdf");
+    window.PagedPdf.downloadPdf(result.blob, "hello.pdf");
   });
 </script>
 ```
 
-Pin an exact version in production.
+Pin an exact npm or UNPKG version in production. Files under the custom
+domain's stable `/downloads/` paths represent the current deployed build.
 
 ## API
 
@@ -160,8 +169,6 @@ not supported. Pass self-contained CSS through `styleText`. Errors are
 
 ## Rendering support
 
-The initial primitive renderer deliberately supports a bounded subset:
-
 | Feature | v0.1 behavior |
 |---|---|
 | Paged.js page count and dimensions | Supported |
@@ -174,38 +181,30 @@ The initial primitive renderer deliberately supports a bounded subset:
 | External HTTP(S), mail, and telephone links | PDF link annotations |
 | Forced page breaks, counters, margin content | Laid out by Paged.js |
 
-The following are not yet reproduced:
-
-- gradients, background images, shadows, filters, blend modes, and opacity;
-- border radius, dashed/dotted borders, and complex table-border resolution;
-- transforms, CSS stacking contexts, masks, and non-rectangular clipping;
-- SVG drawing, canvas, video, GIF, WebP, AVIF, or responsive `srcset`;
-- custom web-font embedding, complex-script shaping, bidi, or vertical text;
-- exact browser font metrics, kerning, letter spacing, and ligatures;
-- tagged-PDF structure or PDF accessibility semantics.
-
-The renderer uses the positions established by Paged.js, but unsupported visual
-effects are omitted. It does not silently fall back to a screenshot.
+The bounded renderer does not reproduce gradients, shadows, filters, blend
+modes, opacity, rounded or complex borders, transforms, SVG/canvas/video,
+custom web fonts, complex-script shaping, bidi, vertical text, or tagged-PDF
+semantics. Unsupported effects are omitted; the library never silently falls
+back to a screenshot.
 
 ## Security and privacy
 
-Conversion happens locally. String/element input is cloned into a temporary
+Conversion happens locally. String or element input is cloned into a temporary
 Shadow DOM boundary. The high-level API removes scripts, frames, embeds,
 objects, templates, event handlers, `srcdoc`, custom elements, active SVG
 animation, unsafe resource attributes, and URL-bearing CSS.
 
 Remote PNG/JPEG images must pass the origin policy, are fetched with redirects
-disabled before entering the render DOM, and are replaced with temporary local
-blob URLs. Their byte signatures and dimensions are validated before jsPDF
-receives them. Cross-origin images require suitable CORS headers.
+disabled, and are replaced with temporary local blob URLs. Their byte
+signatures and dimensions are validated before jsPDF receives them.
+Cross-origin images require suitable CORS headers.
 
 This reduces active-content risk but is not a replacement for a maintained
-application-level HTML sanitizer. Treat input as trusted whenever possible.
+application-level sanitizer. Treat input as trusted whenever possible.
 
 Conversions time out after 60 seconds and enforce limits on input size, DOM
 elements, page dimensions, pages, drawing commands, image count, image bytes,
-image pixels, and PDF output. Expensive DOM translation periodically yields so
-abort and timeout signals can be observed.
+image pixels, and PDF output.
 
 ## Development
 
@@ -218,17 +217,22 @@ npm run validate
 ```
 
 Validation runs linting, strict TypeScript checks, coverage, production builds,
-Chromium E2E tests, PDF.js parsing/text extraction, no-canvas authoring tests,
-redirect-boundary tests, and npm package-content checks. Coverage must remain
-at least 80%.
+Chromium E2E tests, PDF.js parsing and text extraction, no-canvas authoring
+tests, security-boundary tests, direct-download checks, and npm package-content
+checks. Coverage must remain at least 80%.
 
 ## Release and deployment
 
+- The static site build includes the manual and direct downloads under
+  `demo-dist/`.
+- A successful `main` CI run triggers the protected SSH deployment workflow
+  for `paged-pdf-js.pazureck.de`.
 - Publishing a GitHub Release whose tag matches `v<package.version>` runs the
   npm release workflow with provenance.
-- A successful `main` CI run triggers the protected static-demo deployment
-  workflow for `pagedpdf.pazureck.de`.
 - UNPKG serves the npm package automatically; no separate upload is needed.
+
+The required server, GitHub environment, DNS, TLS, and npm trusted-publisher
+setup is documented in [Deployment](docs/DEPLOYMENT.md).
 
 ## License
 

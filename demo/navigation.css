@@ -10,8 +10,31 @@
   text-decoration: none;
 }
 
-@media (max-width: 560px) {
-  .header-nav {
+.header-nav a[aria-current="page"] {
+  color: #0c7289;
+}
+
+@media (max-width: 720px) {
+  .site-header {
+    flex-wrap: wrap;
     gap: 12px;
+    padding-block: 12px;
+  }
+
+  .header-nav {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .site-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .header-nav {
+    justify-content: flex-start;
   }
 }

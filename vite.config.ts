@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+
 import { defineConfig } from "vite";
 import dts from "vite-plugin-dts";
 
@@ -7,7 +8,8 @@ export default defineConfig({
     dts({
       entryRoot: "src",
       include: ["src"],
-      outDirs: ["dist"]
+      outDirs: ["dist"],
+      bundleTypes: true
     })
   ],
   build: {

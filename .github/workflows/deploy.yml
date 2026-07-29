@@ -11,21 +11,35 @@ permissions:
   contents: read
 
 concurrency:
-  group: pagedpdf-production
+  group: paged-pdf-js-production
   cancel-in-progress: false
 
 jobs:
   build:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    if: >-
+      (github.event_name == 'workflow_dispatch' &&
+       github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Verify workflow-run commit is the current main tip
+        if: github.event_name == 'workflow_run'
+        run: |
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
@@ -35,14 +49,17 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test:coverage
-      - run: npm run build:demo
+      - run: npm run build
+      - run: test -s demo-dist/manual.html
+      - run: test -s demo-dist/downloads/paged-pdf.min.js
+      - run: test -s demo-dist/downloads/manifest.json
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: paged-pdf-demo-${{ github.event.workflow_run.head_sha || github.sha }}
+          name: paged-pdf-site-${{ github.event.workflow_run.head_sha || github.sha }}
           path: demo-dist/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
 
   deploy:
     needs: build
@@ -50,12 +67,12 @@ jobs:
     timeout-minutes: 10
     environment:
       name: production
-      url: https://pagedpdf.pazureck.de
+      url: https://paged-pdf-js.pazureck.de
 
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: paged-pdf-demo-${{ github.event.workflow_run.head_sha || github.sha }}
+          name: paged-pdf-site-${{ github.event.workflow_run.head_sha || github.sha }}
           path: demo-dist
 
       - name: Configure SSH
@@ -86,23 +103,56 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
         run: |
+          set -euo pipefail
           tar -czf demo-dist.tar.gz -C demo-dist .
+          sha256sum demo-dist.tar.gz > demo-dist.tar.gz.sha256
+
           target="${DEPLOY_USER}@${DEPLOY_HOST}"
-          release="${DEPLOY_PATH}/releases/${RELEASE_SHA}"
+          release_id="${RELEASE_SHA}-${RUN_ID}-${RUN_ATTEMPT}"
+          staging="${DEPLOY_PATH}/releases/.upload-${release_id}"
+          release="${DEPLOY_PATH}/releases/${release_id}"
           previous="$(ssh "$target" "readlink '${DEPLOY_PATH}/current' || true")"
-          ssh "$target" "mkdir -p '$release'"
-          scp demo-dist.tar.gz "$target:$release/demo-dist.tar.gz"
-          ssh "$target" "tar -xzf '$release/demo-dist.tar.gz' -C '$release' && rm '$release/demo-dist.tar.gz'"
+
+          cleanup_staging() {
+            ssh "$target" "if [ -d '$staging' ]; then rm -r -- '$staging'; fi"
+          }
+          trap cleanup_staging EXIT
+
+          ssh "$target" "mkdir -p '$staging'"
+          scp demo-dist.tar.gz demo-dist.tar.gz.sha256 "$target:$staging/"
+          ssh "$target" "cd '$staging' && sha256sum -c demo-dist.tar.gz.sha256 && tar -xzf demo-dist.tar.gz && rm demo-dist.tar.gz demo-dist.tar.gz.sha256"
+          ssh "$target" "mv '$staging' '$release'"
           ssh "$target" "ln -sfn '$release' '${DEPLOY_PATH}/current.next' && mv -Tf '${DEPLOY_PATH}/current.next' '${DEPLOY_PATH}/current'"
 
-          asset="$(grep -oE 'assets/[^"]+\.js' demo-dist/index.html | head -n 1)"
           if ! curl --fail --show-error --silent --retry 5 --retry-delay 3 \
-            https://pagedpdf.pazureck.de/ > /dev/null ||
+            https://paged-pdf-js.pazureck.de/ > /dev/null ||
              ! curl --fail --show-error --silent --retry 5 --retry-delay 3 \
-            "https://pagedpdf.pazureck.de/$asset" > /dev/null; then
-            if [[ "$previous" =~ ^${DEPLOY_PATH}/releases/[a-f0-9]{40}$ ]]; then
+            https://paged-pdf-js.pazureck.de/manual.html > /dev/null ||
+             ! curl --fail --show-error --silent --retry 5 --retry-delay 3 \
+            https://paged-pdf-js.pazureck.de/downloads/paged-pdf.min.js > /dev/null; then
+            if [[ "$previous" =~ ^${DEPLOY_PATH}/releases/([a-f0-9]{40}|[a-f0-9]{40}-[0-9]+-[0-9]+)$ ]]; then
               ssh "$target" "ln -sfn '$previous' '${DEPLOY_PATH}/current.next' && mv -Tf '${DEPLOY_PATH}/current.next' '${DEPLOY_PATH}/current'"
             fi
             exit 1
           fi
+
+          ssh "$target" "
+            set -eu
+            current=\$(readlink '${DEPLOY_PATH}/current')
+            find '${DEPLOY_PATH}/releases' -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' |
+              sort -nr |
+              tail -n +6 |
+              cut -d ' ' -f 2- |
+              while IFS= read -r candidate; do
+                case \"\$candidate\" in
+                  '${DEPLOY_PATH}/releases/'*) ;;
+                  *) exit 1 ;;
+                esac
+                if [ \"\$candidate\" != \"\$current\" ]; then
+                  rm -r -- \"\$candidate\"
+                fi
+              done
+          "

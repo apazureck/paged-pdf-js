@@ -5,7 +5,7 @@
   "type": "module",
   "license": "MIT",
   "author": "Andreas Pazureck <andreas@pazureck.de>",
-  "homepage": "https://pagedpdf.pazureck.de",
+  "homepage": "https://paged-pdf-js.pazureck.de",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/apazureck/paged-pdf-js.git"
@@ -45,18 +45,24 @@
     "node": ">=20.19"
   },
   "scripts": {
-    "build": "npm run build:lib && npm run build:demo",
+    "build": "npm run build:lib && npm run prepare:downloads && npm run build:demo",
     "build:lib": "vite build",
     "build:demo": "vite build --config vite.demo.config.ts",
-    "demo": "vite --config vite.demo.config.ts --host 127.0.0.1",
+    "prepare:downloads": "node scripts/prepare-downloads.mjs",
+    "prepare:demo": "npm run build:lib && npm run prepare:downloads",
+    "demo": "npm run prepare:demo && vite --config vite.demo.config.ts --host 127.0.0.1",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "node scripts/run-e2e.mjs",
+    "test:e2e": "npm run prepare:demo && node scripts/run-e2e.mjs",
     "pack:check": "npm pack --dry-run",
     "validate": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run test:e2e && npm run pack:check",
     "prepublishOnly": "npm run validate"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "dependencies": {
     "css-tree": "^3.2.1",
@@ -67,6 +73,7 @@
     "@playwright/test": "^1.50.0",
     "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^4.0.0",
+    "ajv": "^8.20.0",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.0.0",
     "globals": "^16.0.0",

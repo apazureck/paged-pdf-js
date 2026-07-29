@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Developer manual for creating paged PDFs directly in the browser with paged-pdf-js."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' blob:; connect-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <link
+      rel="canonical"
+      href="https://paged-pdf-js.pazureck.de/manual.html"
+    />
+    <title>Developer manual | paged-pdf-js</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/navigation.css" />
+    <link rel="stylesheet" href="/manual.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="paged-pdf-js home">
+        <span aria-hidden="true">P</span>
+        paged-pdf-js
+      </a>
+      <nav class="header-nav" aria-label="Site navigation">
+        <a href="/">Playground</a>
+        <a href="/gallery.html">Feature lab</a>
+        <a href="/manual.html" aria-current="page">Manual</a>
+        <a
+          class="github-link"
+          href="https://github.com/apazureck/paged-pdf-js"
+          rel="noreferrer"
+        >
+          GitHub
+        </a>
+      </nav>
+    </header>
+
+    <main class="manual-main">
+      <nav class="manual-navigation" aria-label="Manual sections">
+        <p>On this page</p>
+        <a href="#installation">Installation</a>
+        <a href="#quick-start">Quick start</a>
+        <a href="#browser-bundles">Browser bundles</a>
+        <a href="#api">API</a>
+        <a href="#options">Options</a>
+        <a href="#errors">Errors</a>
+        <a href="#security">Security</a>
+      </nav>
+
+      <article class="manual-content">
+        <header class="manual-hero">
+          <p class="eyebrow">Version __PACKAGE_VERSION__</p>
+          <h1>Developer manual</h1>
+          <p class="intro">
+            Use Paged.js to lay out HTML, then author a searchable PDF from
+            that exact paginated DOM with jsPDF. Everything runs locally in the
+            browser and no page screenshot is taken.
+          </p>
+        </header>
+
+        <section id="installation" class="manual-section">
+          <p class="eyebrow">01 · Start here</p>
+          <h2>Installation</h2>
+          <p>
+            The npm package is intended for browser applications and bundlers.
+            Node.js can install and bundle it, but conversion requires a
+            browser DOM.
+          </p>
+          <pre class="code-block"><code>npm install paged-pdf-js</code></pre>
+          <p>
+            Importing the module does not access the DOM. The browser is only
+            required when you call a conversion or download function.
+          </p>
+        </section>
+
+        <section id="quick-start" class="manual-section">
+          <p class="eyebrow">02 · First document</p>
+          <h2>Quick start</h2>
+          <pre class="code-block"><code>import { downloadPdf, htmlToPdf } from "paged-pdf-js";
+
+const result = await htmlToPdf(
+  `&lt;article&gt;
+    &lt;h1&gt;Quarterly report&lt;/h1&gt;
+    &lt;p&gt;This text remains selectable.&lt;/p&gt;
+  &lt;/article&gt;`,
+  {
+    styleText: `
+      @page {
+        size: A4;
+        margin: 20mm;
+
+        @bottom-center {
+          content: counter(page) " / " counter(pages);
+        }
+      }
+    `,
+    metadata: {
+      title: "Quarterly report",
+      author: "Example team"
+    }
+  }
+);
+
+downloadPdf(result.blob, "quarterly-report.pdf");</code></pre>
+          <p>
+            The result contains <code>bytes</code>, <code>blob</code>, and
+            <code>pageCount</code>. You can display the Blob in an iframe,
+            upload it, or pass it to <code>downloadPdf</code>.
+          </p>
+        </section>
+
+        <section id="browser-bundles" class="manual-section">
+          <p class="eyebrow">03 · No build step</p>
+          <h2>Browser bundles</h2>
+          <p>
+            Download the current site build directly, or pin the exact npm
+            version through UNPKG for production. The standalone build exposes
+            <code>window.PagedPdf</code>.
+          </p>
+
+          <div id="downloads" class="download-grid">
+            <a
+              class="download-card"
+              href="/downloads/paged-pdf.min.js"
+              download="paged-pdf.min.js"
+            >
+              <strong>Standalone browser bundle</strong>
+              <span>UMD · window.PagedPdf</span>
+            </a>
+            <a
+              class="download-card"
+              href="/downloads/paged-pdf.js"
+              download="paged-pdf.js"
+            >
+              <strong>ES module bundle</strong>
+              <span>Modern browser import</span>
+            </a>
+            <a
+              class="download-card"
+              href="/downloads/paged-pdf.cjs"
+              download="paged-pdf.cjs"
+            >
+              <strong>CommonJS bundle</strong>
+              <span>Bundler compatibility</span>
+            </a>
+            <a
+              class="download-card"
+              href="/downloads/index.d.ts"
+              download="index.d.ts"
+            >
+              <strong>TypeScript declarations</strong>
+              <span>Public entry declarations</span>
+            </a>
+            <a
+              class="download-card"
+              href="/downloads/paged-pdf-js-__PACKAGE_VERSION__.tgz"
+              download="paged-pdf-js-__PACKAGE_VERSION__.tgz"
+            >
+              <strong>npm package archive</strong>
+              <span>Version __PACKAGE_VERSION__</span>
+            </a>
+          </div>
+
+          <h3>Standalone script</h3>
+          <pre class="code-block"><code>&lt;script src="https://unpkg.com/paged-pdf-js@__PACKAGE_VERSION__/dist/paged-pdf.min.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  window.PagedPdf.htmlToPdf("&lt;h1&gt;Hello&lt;/h1&gt;", {
+    styleText: "@page { size: A4; margin: 20mm; }"
+  }).then((result) =&gt; {
+    window.PagedPdf.downloadPdf(result.blob, "hello.pdf");
+  });
+&lt;/script&gt;</code></pre>
+
+          <h3>Direct ES module</h3>
+          <pre class="code-block"><code>import { htmlToPdf } from
+  "https://paged-pdf-js.pazureck.de/downloads/paged-pdf.js";</code></pre>
+
+          <div class="callout">
+            Pin an exact npm or UNPKG version in production. The stable files
+            on this site always represent the current deployed build.
+          </div>
+        </section>
+
+        <section id="api" class="manual-section">
+          <p class="eyebrow">04 · Public surface</p>
+          <h2>API reference</h2>
+
+          <h3><code>htmlToPdf(input, options?)</code></h3>
+          <p>
+            Accepts an HTML string, Element, or DocumentFragment. Input is
+            cloned, sanitized, paginated in an isolated temporary render host,
+            and converted into PDF drawing primitives.
+          </p>
+
+          <h3><code>pagedDomToPdf(root, options?)</code></h3>
+          <p>
+            Converts an existing trusted Paged.js preview containing
+            <code>.pagedjs_page</code> elements. Use this lower-level API when
+            your application already owns the pagination lifecycle.
+          </p>
+
+          <h3><code>downloadPdf(bytesOrBlob, filename?)</code></h3>
+          <p>
+            Starts a browser download and revokes its temporary object URL
+            after use.
+          </p>
+
+          <pre class="code-block"><code>interface PdfResult {
+  readonly bytes: Uint8Array;
+  readonly pageCount: number;
+  readonly blob: Blob;
+}</code></pre>
+        </section>
+
+        <section id="options" class="manual-section">
+          <p class="eyebrow">05 · Configuration</p>
+          <h2>Conversion options</h2>
+          <div class="manual-table-wrap">
+            <table class="manual-table" aria-label="Conversion options">
+              <thead>
+                <tr>
+                  <th>Option</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>styleText</code></td>
+                  <td>Self-contained CSS and Paged Media rules.</td>
+                </tr>
+                <tr>
+                  <td><code>baseUrl</code></td>
+                  <td>Base URL used to resolve relative image and link URLs.</td>
+                </tr>
+                <tr>
+                  <td><code>allowedResourceOrigins</code></td>
+                  <td>Explicit cross-origin PNG/JPEG allowlist.</td>
+                </tr>
+                <tr>
+                  <td><code>metadata</code></td>
+                  <td>PDF title, author, subject, and keywords.</td>
+                </tr>
+                <tr>
+                  <td><code>signal</code></td>
+                  <td>AbortSignal for cancelling expensive conversion.</td>
+                </tr>
+                <tr>
+                  <td><code>onProgress</code></td>
+                  <td>Receives paginate, assets, render, and write phases.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Cancellation and progress</h3>
+          <pre class="code-block"><code>const controller = new AbortController();
+
+const result = await htmlToPdf(html, {
+  signal: controller.signal,
+  onProgress(progress) {
+    console.log(progress.phase, progress.page, progress.totalPages);
+  }
+});
+
+// controller.abort();</code></pre>
+        </section>
+
+        <section id="errors" class="manual-section">
+          <p class="eyebrow">06 · Failure handling</p>
+          <h2>Errors</h2>
+          <p>
+            Conversion failures are <code>PagedPdfError</code> instances with
+            stable machine-readable codes.
+          </p>
+          <div class="manual-table-wrap">
+            <table class="manual-table" aria-label="Error codes">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>BROWSER_REQUIRED</code></td>
+                  <td>The conversion API was called without a browser DOM.</td>
+                </tr>
+                <tr>
+                  <td><code>INVALID_INPUT</code></td>
+                  <td>HTML, resource, size, or safety validation failed.</td>
+                </tr>
+                <tr>
+                  <td><code>PAGINATION_FAILED</code></td>
+                  <td>Paged.js could not produce a valid page DOM.</td>
+                </tr>
+                <tr>
+                  <td><code>PDF_WRITE_FAILED</code></td>
+                  <td>PDF primitive authoring or serialization failed.</td>
+                </tr>
+                <tr>
+                  <td><code>ABORTED</code></td>
+                  <td>The caller cancelled the conversion.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="security" class="manual-section">
+          <p class="eyebrow">07 · Boundaries</p>
+          <h2>Security and limitations</h2>
+          <p>
+            Conversion happens locally. High-level string and element input is
+            cloned and active HTML is removed before pagination. Remote images
+            are same-origin by default and cross-origin PNG/JPEG files require
+            both an explicit allowlist entry and suitable CORS headers.
+          </p>
+          <ul>
+            <li>
+              External stylesheets, CSS <code>@import</code>, scripts, frames,
+              SVG execution, and responsive <code>srcset</code> loading are
+              blocked.
+            </li>
+            <li>
+              Use trusted input where possible and retain an application-level
+              sanitizer for untrusted authoring workflows.
+            </li>
+            <li>
+              The vector renderer supports text, solid fills and borders,
+              PNG/JPEG images, and links. It omits gradients, shadows,
+              transforms, complex scripts, custom-font embedding, and tagged
+              PDF structure.
+            </li>
+            <li>
+              Input, DOM, page, command, image, timeout, and output limits
+              protect the browser from unbounded work.
+            </li>
+          </ul>
+          <p>
+            Use the <a href="/gallery.html">interactive feature lab</a> to
+            compare the source HTML, Paged.js preview, and direct PDF output.
+          </p>
+        </section>
+      </article>
+    </main>
+
+    <footer>
+      <p>
+        paged-pdf-js __PACKAGE_VERSION__ · MIT licensed · Conversion stays in
+        your browser.
+      </p>
+    </footer>
+  </body>
+</html>

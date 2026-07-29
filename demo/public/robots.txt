@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://paged-pdf-js.pazureck.de/sitemap.xml

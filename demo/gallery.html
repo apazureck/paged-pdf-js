@@ -11,6 +11,10 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' blob:; connect-src 'self' ws: wss:; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
+    <link
+      rel="canonical"
+      href="https://paged-pdf-js.pazureck.de/gallery.html"
+    />
     <title>Paged.js feature lab | paged-pdf-js</title>
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/gallery.css" />
@@ -24,6 +28,7 @@
       <nav class="header-nav" aria-label="Site navigation">
         <a href="/">Playground</a>
         <a href="/gallery.html" aria-current="page">Feature lab</a>
+        <a href="/manual.html">Manual</a>
         <a
           class="github-link"
           href="https://github.com/apazureck/paged-pdf-js"
@@ -65,9 +70,18 @@
             aria-label="Paged.js examples"
           ></nav>
           <div class="legend" aria-label="Compatibility legend">
-            <p><span class="support support-match">Close match</span> Core geometry is reproduced.</p>
-            <p><span class="support support-partial">Partial</span> Compare known generated-content differences.</p>
-            <p><span class="support support-pagedjs-only">Paged.js only</span> Deliberate stress case.</p>
+            <p>
+              <span class="support support-match">Close match</span>
+              Core geometry is reproduced.
+            </p>
+            <p>
+              <span class="support support-partial">Partial</span>
+              Compare known generated-content differences.
+            </p>
+            <p>
+              <span class="support support-pagedjs-only">Paged.js only</span>
+              Deliberate stress case.
+            </p>
           </div>
         </aside>
 
@@ -80,7 +94,11 @@
               </div>
               <h2 id="example-title"></h2>
               <p id="example-summary"></p>
-              <ul id="feature-tags" class="feature-tags" aria-label="Features"></ul>
+              <ul
+                id="feature-tags"
+                class="feature-tags"
+                aria-label="Features"
+              ></ul>
             </div>
             <div class="run-controls">
               <button id="rerun-button" class="primary" type="button">
@@ -91,20 +109,29 @@
               </button>
               <div class="status-row" aria-live="polite">
                 <span class="status-dot" aria-hidden="true"></span>
-                <span data-testid="status" id="status">Preparing example...</span>
+                <span data-testid="status" id="status">
+                  Preparing example...
+                </span>
               </div>
               <p id="error" class="error" role="alert" hidden></p>
             </div>
           </header>
 
           <div class="proof-grid">
-            <section class="proof-card source-card" aria-labelledby="source-title">
+            <section
+              class="proof-card source-card"
+              aria-labelledby="source-title"
+            >
               <header class="proof-header">
                 <div>
                   <span class="proof-number">01</span>
                   <h3 id="source-title">Source document</h3>
                 </div>
-                <div class="source-tabs" role="tablist" aria-label="Source views">
+                <div
+                  class="source-tabs"
+                  role="tablist"
+                  aria-label="Source views"
+                >
                   <button
                     id="rendered-tab"
                     type="button"
@@ -138,7 +165,11 @@
                 </div>
               </header>
               <div class="proof-surface source-surface">
-                <div id="rendered-panel" role="tabpanel" aria-labelledby="rendered-tab">
+                <div
+                  id="rendered-panel"
+                  role="tabpanel"
+                  aria-labelledby="rendered-tab"
+                >
                   <iframe
                     id="source-preview"
                     title="Continuous source preview"
@@ -164,7 +195,10 @@
               </div>
             </section>
 
-            <section class="proof-card paged-card" aria-labelledby="paged-title">
+            <section
+              class="proof-card paged-card"
+              aria-labelledby="paged-title"
+            >
               <header class="proof-header">
                 <div>
                   <span class="proof-number">02</span>

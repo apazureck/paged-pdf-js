@@ -11,9 +11,11 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src 'self' blob:; connect-src 'self' ws: wss:; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"
     />
+    <link rel="canonical" href="https://paged-pdf-js.pazureck.de/" />
     <title>paged-pdf-js | browser HTML to PDF</title>
     <link rel="stylesheet" href="/styles.css" />
     <link rel="stylesheet" href="/navigation.css" />
+    <link rel="stylesheet" href="/downloads.css" />
   </head>
   <body>
     <header class="site-header">
@@ -22,7 +24,9 @@
         paged-pdf-js
       </a>
       <nav class="header-nav" aria-label="Site navigation">
+        <a href="/" aria-current="page">Playground</a>
         <a href="/gallery.html">Feature lab</a>
+        <a href="/manual.html">Manual</a>
         <a
           class="github-link"
           href="https://github.com/apazureck/paged-pdf-js"
@@ -41,9 +45,36 @@
           Write HTML and Paged Media CSS, then export a real multi-page PDF
           with selectable text. Your document never leaves this browser.
         </p>
+        <div class="hero-actions">
+          <a class="button-link primary" href="#playground">Try the playground</a>
+          <a class="button-link" href="/manual.html">Read the manual</a>
+        </div>
       </section>
 
-      <section class="workspace" aria-label="PDF playground">
+      <section class="release-panel" aria-labelledby="download-title">
+        <div>
+          <p class="eyebrow">Current site build · __PACKAGE_VERSION__</p>
+          <h2 id="download-title">Use it in your own project.</h2>
+          <p>
+            Install from npm after the first public release, or download the
+            browser-ready bundle directly from this site.
+          </p>
+        </div>
+        <div class="release-actions">
+          <a
+            href="/downloads/paged-pdf.min.js"
+            download="paged-pdf.min.js"
+          >
+            Standalone browser bundle
+          </a>
+          <a href="/downloads/paged-pdf.js" download="paged-pdf.js">
+            ES module bundle
+          </a>
+          <a href="/manual.html#browser-bundles">All downloads and setup</a>
+        </div>
+      </section>
+
+      <section id="playground" class="workspace" aria-label="PDF playground">
         <div class="editor-panel">
           <div class="field">
             <label for="html-input">HTML</label>

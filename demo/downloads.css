@@ -1,0 +1,100 @@
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.button-link {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 18px;
+  border: 1px solid #0c7289;
+  border-radius: 999px;
+  color: #19323d;
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.button-link.primary {
+  background: #0c7289;
+  color: white;
+}
+
+.button-link:focus-visible {
+  outline: 3px solid #f1ae4d;
+  outline-offset: 2px;
+}
+
+.release-panel {
+  display: grid;
+  gap: 36px;
+  margin-bottom: 54px;
+  padding: 30px;
+  border: 1px solid #b9b5aa;
+  border-radius: 18px;
+  background: #fffdf8;
+  grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
+}
+
+.release-panel h2 {
+  margin: 0;
+  color: #102f3d;
+  font-family: Georgia, serif;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  line-height: 1;
+}
+
+.release-panel p {
+  color: #52636b;
+  line-height: 1.6;
+}
+
+.release-actions {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.release-actions a {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 1px solid #c9c5bb;
+  border-radius: 8px;
+  color: #19323d;
+  font-weight: 760;
+  text-decoration: none;
+}
+
+.release-actions a::after {
+  color: #0c7289;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.release-actions a[download]::after {
+  content: "Download";
+}
+
+.release-actions a:not([download])::after {
+  content: "Open manual";
+}
+
+.release-actions a:hover {
+  border-color: #0c7289;
+  background: #edf6f7;
+}
+
+@media (max-width: 760px) {
+  .release-panel {
+    gap: 22px;
+    padding: 22px;
+    grid-template-columns: 1fr;
+  }
+}
