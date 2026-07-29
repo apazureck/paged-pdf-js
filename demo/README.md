@@ -17,9 +17,13 @@ The feature lab keeps three synchronized views for each catalog entry:
 2. the Paged.js page DOM;
 3. the PDF authored from that exact page DOM with jsPDF primitives.
 
-Examples are deep-linkable as
-`gallery.html#/examples/<example-id>`. The support badge and comparison notes
-call out places where browser-generated content is intentionally not reproduced
-by the bounded PDF renderer.
+The “Tune this proof” controls adjust page margin, body text, line height,
+paragraph spacing, and heading size. Changes update the effective CSS
+immediately and regenerate the Paged.js and PDF panes after a short debounce.
+Values are stored in the URL query string, so a tuned proof can be reloaded or
+shared together with its `#/examples/<example-id>` deep link.
+
+The support badge and comparison notes call out places where browser-generated
+content is intentionally not reproduced by the bounded PDF renderer.
 
 No gallery path uses screenshots, `html2canvas`, or `jsPDF.html()`.

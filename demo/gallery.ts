@@ -1,5 +1,12 @@
 import { downloadPdf, type PdfResult } from "../src/index.js";
+import { createGalleryControls } from "./gallery-controls.js";
 import { findGalleryExample, galleryExamples } from "./gallery-examples.js";
+import {
+  applyPlaygroundSettings,
+  readPlaygroundSettings,
+  writePlaygroundSettings,
+  type PlaygroundSettings
+} from "./gallery-playground.js";
 import type {
   ExampleGroup,
   ExampleSupport,
@@ -45,6 +52,7 @@ interface PreviewRequest {
 
 const FRAME_TIMEOUT_MS = 10_000;
 const PREVIEW_TIMEOUT_MS = 60_000;
+const CONTROL_DEBOUNCE_MS = 300;
 const supportLabels: Readonly<Record<ExampleSupport, string>> = {
   match: "Close match",
   partial: "Partial",
@@ -84,19 +92,28 @@ const status = requireElement<HTMLElement>("#status");
 const errorMessage = requireElement<HTMLElement>("#error");
 const rerunButton = requireElement<HTMLButtonElement>("#rerun-button");
 const downloadButton = requireElement<HTMLButtonElement>("#download-button");
+const proofGrid = requireElement<HTMLElement>(".proof-grid");
 const sourceTabs = Array.from(
   document.querySelectorAll<HTMLButtonElement>("[data-source-tab]")
 );
 
 const previewRequests = new Map<number, PreviewRequest>();
 let selectedExample: GalleryExample = galleryExamples[0];
+let playgroundSettings: PlaygroundSettings = readPlaygroundSettings(
+  window.location.search
+);
 let activeController: AbortController | undefined;
 let activeToken = 0;
 let currentResult: PdfResult | undefined;
 let currentPdfUrl: string | undefined;
+let controlRenderTimer: ReturnType<typeof setTimeout> | undefined;
 
 function supportClass(support: ExampleSupport): string {
   return `support support-${support}`;
+}
+
+function effectiveExample(example: GalleryExample): GalleryExample {
+  return applyPlaygroundSettings(example, playgroundSettings);
 }
 
 function buildNavigation(): void {
@@ -175,6 +192,13 @@ function sourceDocument(example: GalleryExample): string {
 </html>`;
 }
 
+function updateSource(example: GalleryExample): void {
+  const effective = effectiveExample(example);
+  htmlSource.textContent = effective.html;
+  cssSource.textContent = effective.css;
+  sourcePreview.srcdoc = sourceDocument(effective);
+}
+
 function updateExampleDetails(example: GalleryExample): void {
   const number = galleryExamples.indexOf(example) + 1;
   exampleTitle.textContent = example.title;
@@ -182,9 +206,7 @@ function updateExampleDetails(example: GalleryExample): void {
   exampleSupport.className = supportClass(example.support);
   exampleSupport.textContent = supportLabels[example.support];
   exampleIndex.textContent = `${String(number).padStart(2, "0")} / ${galleryExamples.length}`;
-  htmlSource.textContent = example.html;
-  cssSource.textContent = example.css;
-  sourcePreview.srcdoc = sourceDocument(example);
+  updateSource(example);
   featureTags.replaceChildren(
     ...example.features.map((feature) => {
       const item = document.createElement("li");
@@ -326,6 +348,10 @@ function handleProgress(message: PreviewProgressMessage): void {
 }
 
 async function renderSelectedExample(): Promise<void> {
+  if (controlRenderTimer !== undefined) {
+    clearTimeout(controlRenderTimer);
+    controlRenderTimer = undefined;
+  }
   activeController?.abort();
   const controller = new AbortController();
   activeController = controller;
@@ -340,7 +366,7 @@ async function renderSelectedExample(): Promise<void> {
 
   try {
     const previewResult = await requestPagedPreview(
-      selectedExample,
+      effectiveExample(selectedExample),
       token,
       controller.signal
     );
@@ -385,18 +411,50 @@ async function renderSelectedExample(): Promise<void> {
 }
 
 function selectFromLocation(): void {
+  if (controlRenderTimer !== undefined) {
+    clearTimeout(controlRenderTimer);
+    controlRenderTimer = undefined;
+  }
   const requestedId = selectedIdFromHash();
   const nextExample = findGalleryExample(requestedId);
   if (requestedId !== nextExample.id) {
     window.history.replaceState(
       null,
       "",
-      `${window.location.pathname}#/examples/${nextExample.id}`
+      `${window.location.pathname}${window.location.search}#/examples/${nextExample.id}`
     );
   }
   selectedExample = nextExample;
   updateExampleDetails(nextExample);
   void renderSelectedExample();
+}
+
+function writeSettingsToLocation(): void {
+  const search = writePlaygroundSettings(playgroundSettings);
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${search}${window.location.hash}`
+  );
+}
+
+function handlePlaygroundInput(settings: PlaygroundSettings): void {
+  playgroundSettings = { ...settings };
+  writeSettingsToLocation();
+  activeController?.abort();
+  clearPdf();
+  updateSource(selectedExample);
+  status.textContent = "Changes pending...";
+  pagedPreviewStatus.textContent = "Updating...";
+  errorMessage.hidden = true;
+  rerunButton.disabled = true;
+  if (controlRenderTimer !== undefined) {
+    clearTimeout(controlRenderTimer);
+  }
+  controlRenderTimer = setTimeout(() => {
+    controlRenderTimer = undefined;
+    void renderSelectedExample();
+  }, CONTROL_DEBOUNCE_MS);
 }
 
 window.addEventListener("message", (event: MessageEvent<PreviewMessage>) => {
@@ -467,6 +525,12 @@ for (const [index, tab] of sourceTabs.entries()) {
   });
 }
 
+const galleryControls = createGalleryControls(
+  proofGrid,
+  playgroundSettings,
+  handlePlaygroundInput
+);
+
 rerunButton.addEventListener("click", () => {
   void renderSelectedExample();
 });
@@ -478,7 +542,15 @@ downloadButton.addEventListener("click", () => {
 });
 
 window.addEventListener("hashchange", selectFromLocation);
+window.addEventListener("popstate", () => {
+  playgroundSettings = readPlaygroundSettings(window.location.search);
+  galleryControls.update(playgroundSettings);
+  selectFromLocation();
+});
 window.addEventListener("beforeunload", () => {
+  if (controlRenderTimer !== undefined) {
+    clearTimeout(controlRenderTimer);
+  }
   activeController?.abort();
   clearPdf();
 });
