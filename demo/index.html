@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Generate paged PDFs from HTML directly in your browser with Paged.js."
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src blob:; connect-src 'self' ws: wss:; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>paged-pdf-js — browser HTML to PDF</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="paged-pdf-js home">
+        <span aria-hidden="true">P</span>
+        paged-pdf-js
+      </a>
+      <a
+        class="github-link"
+        href="https://github.com/apazureck/paged-pdf-js"
+        rel="noreferrer"
+      >
+        GitHub
+      </a>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">Runs locally in your browser</p>
+        <h1 id="page-title">HTML to paged PDF</h1>
+        <p class="intro">
+          Write HTML and Paged Media CSS, then export a real multi-page PDF.
+          Your document never leaves this browser.
+        </p>
+      </section>
+
+      <section class="workspace" aria-label="PDF playground">
+        <div class="editor-panel">
+          <div class="field">
+            <label for="html-input">HTML</label>
+            <textarea id="html-input" spellcheck="false"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="css-input">Paged Media CSS</label>
+            <textarea id="css-input" spellcheck="false"></textarea>
+          </div>
+
+          <div class="actions">
+            <button id="generate-button" class="primary" type="button">
+              Generate PDF
+            </button>
+            <button id="download-button" type="button" disabled>
+              Download PDF
+            </button>
+          </div>
+
+          <div class="status-row" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span data-testid="status" id="status">Ready</span>
+          </div>
+          <p id="error" class="error" role="alert" hidden></p>
+        </div>
+
+        <div class="preview-panel">
+          <div class="preview-placeholder" id="preview-placeholder">
+            <span aria-hidden="true">PDF</span>
+            <p>Your generated document will appear here.</p>
+          </div>
+          <iframe
+            id="pdf-preview"
+            title="Generated PDF preview"
+            hidden
+          ></iframe>
+        </div>
+      </section>
+
+      <section class="notes" aria-labelledby="how-title">
+        <div>
+          <p class="eyebrow">How it works</p>
+          <h2 id="how-title">Paged layout, explicit PDF authoring.</h2>
+        </div>
+        <ol>
+          <li><strong>1</strong> Paged.js applies CSS Paged Media.</li>
+          <li><strong>2</strong> Each page is captured at high resolution.</li>
+          <li><strong>3</strong> pdf-lib writes a valid PDF in the browser.</li>
+        </ol>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        Open source under MIT. Version 0.1 creates visually faithful raster
+        pages; selectable text is on the roadmap.
+      </p>
+    </footer>
+
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

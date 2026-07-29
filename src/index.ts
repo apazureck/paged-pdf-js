@@ -1,0 +1,13 @@
+export { downloadPdf } from "./download.js";
+export { PagedPdfError } from "./errors.js";
+export { htmlToPdf, pagedDomToPdf } from "./convert.js";
+export type {
+  ConversionProgress,
+  HtmlToPdfOptions,
+  ImageFormat,
+  PagedDomToPdfOptions,
+  PagedPdfErrorCode,
+  PdfMetadata,
+  PdfResult,
+  ProgressPhase
+} from "./types.js";
