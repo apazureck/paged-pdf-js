@@ -1,33 +1,26 @@
 # Deployment
 
-The production site is a static Vite build. It contains the playground,
-feature lab, developer manual, browser bundles, TypeScript entry declarations,
-an npm-compatible package archive, and a checksummed download manifest.
+The production site is a static Vite build containing the playground, feature
+gallery, developer manual, browser bundles, TypeScript declarations, npm
+archive, and checksummed download manifest.
 
-## Current external status
-
-As checked on 29 July 2026:
-
-- `paged-pdf-js.pazureck.de` resolves to `185.30.32.219`.
-- HTTPS presents a certificate that does not match the hostname.
-- The HTTPS virtual host returns `403`.
-- Plain HTTP redirects to the hosting provider rather than this project.
-- `paged-pdf-js` is not yet available from the public npm registry.
-- `github.com/apazureck/paged-pdf-js` is not yet public and this checkout has
-  no Git remote.
-
-The repository changes can make the release artifact reproducible, but the
-server virtual host, TLS certificate, GitHub repository, and npm ownership must
-be activated in their respective control panels.
+The public repository is
+[`apazureck/paged-pdf-js`](https://github.com/apazureck/paged-pdf-js). CI
+validates every pull request and protected `main` update. A successful trusted
+push to `main` can deploy after the repository owner approves the protected
+`production` environment.
 
 ## Build the complete site
+
+Local validation requires Node.js 20.19+, Python 3.12+, and PHP 8.2+ with the
+ZIP extension available to the PHP CLI.
 
 ```bash
 npm ci
 npm run validate
 ```
 
-The deployable directory is `demo-dist/`. Important paths are:
+The deployable directory is `demo-dist/`:
 
 ```text
 demo-dist/
@@ -43,88 +36,126 @@ demo-dist/
     manifest.json
 ```
 
-The stable download names always represent the current site build. Exact npm
-and UNPKG versions are the immutable distribution channel.
+## Hosting requirements
 
-## Configure the web server
+The automated deployment is designed for the current managed webgo webspace.
+It requires:
 
-The included [Nginx example](../deploy/nginx/paged-pdf-js.conf.example) expects
-this release layout:
+- an FTP account jailed to this site's document root;
+- explicit FTPS with certificate validation and protected data transfers;
+- PHP 8.2 or later with `ZipArchive`;
+- HTTPS with a certificate valid for `paged-pdf-js.pazureck.de`;
+- permission for PHP to create directories, replace site files, and delete the
+  temporary deployment controls.
 
-```text
-/srv/paged-pdf-js/
-  releases/
-    <commit>-<run>-<attempt>/
-  current -> releases/<active release>
+The verified FTPS endpoint for the current server is
+`s219.goserver.host:21`. Its certificate covers `*.goserver.host`. Do not use
+the website hostname as the FTPS host unless its FTP certificate is also valid
+for that name.
+
+## GitHub production secrets
+
+Store every connection value in the protected `production` environment:
+
+| Secret | Meaning |
+|---|---|
+| `FTP_HOST` | Certificate-valid FTPS host, currently `s219.goserver.host` |
+| `FTP_PORT` | Explicit-FTPS port, currently `21` |
+| `FTP_USER` | FTP user jailed to the website document root |
+| `FTP_PASSWORD` | Password for that dedicated FTP user |
+| `FTP_SERVER_DIR` | Relative directory inside the jail; use `.` for its root |
+
+Set values through GitHub's environment settings or the CLI. Do not place
+actual values in a command saved in shell history:
+
+```bash
+gh secret set FTP_HOST --env production
+gh secret set FTP_PORT --env production
+gh secret set FTP_USER --env production
+gh secret set FTP_PASSWORD --env production
+gh secret set FTP_SERVER_DIR --env production
 ```
 
-Required server work:
+Repository contributors cannot read GitHub secret values. Fork pull-request
+workflows do not receive them, external contributors require workflow
+approval, and the deployment job cannot access them until the repository owner
+approves the `production` environment.
 
-1. Create the deployment root and a restricted SSH deployment user.
-2. Give that user write access only to the deployment root.
-3. Configure the virtual host root as `/srv/paged-pdf-js/current`.
-4. Issue a TLS certificate containing `paged-pdf-js.pazureck.de`.
-5. Redirect HTTP to HTTPS after the certificate and virtual host work.
-6. Confirm JavaScript downloads use a JavaScript MIME type and
-   `Access-Control-Allow-Origin: *` so cross-origin ES module imports work.
-7. Keep directory listing disabled.
+## How the FTPS release works
 
-If the public server is managed webspace without SSH, symlinks, or Nginx
-access, adapt the final workflow step to the provider's SFTP deployment path.
-The complete directory to upload remains `demo-dist/`.
+The deploy job:
 
-## Create the public GitHub repository
+1. downloads the exact site artifact built from the validated `main` commit;
+2. validates all local paths, file count, and total uncompressed size;
+3. creates a ZIP plus a uniquely named PHP extractor;
+4. generates a fresh 256-bit deployment token;
+5. embeds the expected SHA-256 archive hash and exact file list in the
+   temporary extractor;
+6. uploads the ZIP first and the PHP extractor last over explicit FTPS;
+7. invokes the extractor with an HTTPS `POST` and the token in a request
+   header;
+8. smoke-tests the homepage, manual, and browser bundle;
+9. removes uploaded control files in both PHP and FTPS cleanup paths.
 
-Create `apazureck/paged-pdf-js` as a public repository, add it as `origin`, and
-push `main`. GitHub Actions must be enabled.
+The PHP extractor returns `404` for a wrong method or token. It rejects:
 
-Create a protected GitHub environment named `production` with:
+- absolute, parent-relative, empty, backslash, or NUL-containing ZIP paths;
+- duplicate paths, directory entries, and symbolic links;
+- archives over 5,000 files or 150 MiB uncompressed;
+- an unexpected checksum or file list;
+- symlinked destination parents and non-file destination collisions.
 
-| Secret | Value |
-|---|---|
-| `DEPLOY_HOST` | SSH hostname for the public server |
-| `DEPLOY_USER` | Restricted deployment user |
-| `DEPLOY_PATH` | Absolute release root, for example `/srv/paged-pdf-js` |
-| `DEPLOY_SSH_KEY` | Private Ed25519 deployment key |
-| `DEPLOY_KNOWN_HOSTS` | Pinned `known_hosts` line for the SSH server |
+Files are extracted into a private staging directory. Assets are published
+before HTML entry points, with `index.html` last. The managed-file manifest at
+`.well-known/paged-pdf-managed-files.json` allows later deployments to remove
+only stale files owned by this project. Unrelated hosting files are not
+deleted.
 
-The deployment workflow validates these values, uploads to a unique staging
-directory, verifies the archive checksum, activates the release through one
-symlink switch, and restores the previous symlink if public smoke checks fail.
+The generated PHP script contains a one-run token and is never committed. It
+deletes itself, the archive, and staging directory after every
+authorized attempt. A permission-restricted persistent lock file serializes
+releases. Errors returned publicly use fixed categories and never
+include FTP credentials or server filesystem paths.
 
-Do not store deployment credentials in this repository.
+## First deployment
+
+1. Point the domain's document root at the FTP account's jailed root.
+2. Enable PHP 8.2+ and the ZIP extension for that document root.
+3. Issue the correct TLS certificate for `paged-pdf-js.pazureck.de`.
+4. Add all five `production` environment secrets.
+5. Merge the deployment pull request to `main`.
+6. Approve the pending `production` environment deployment.
+7. Confirm:
+
+   ```text
+   https://paged-pdf-js.pazureck.de/
+   https://paged-pdf-js.pazureck.de/manual.html
+   https://paged-pdf-js.pazureck.de/downloads/paged-pdf.min.js
+   ```
+
+If a release must be rolled back, revert the responsible commit through a
+pull request. The resulting validated `main` build redeploys the previous
+site. GitHub retains each built site artifact for 14 days for diagnosis.
 
 ## Publish npm and enable UNPKG
 
-The package name currently returns `404` from the public npm registry. Before
-the first release:
+Before the first npm release:
 
-1. Confirm the `paged-pdf-js` name is available to your npm account.
-2. Enable two-factor authentication on the npm account.
-3. Configure npm trusted publishing for:
+1. Confirm the `paged-pdf-js` package name for the npm account.
+2. Enable two-factor authentication on npm.
+3. Configure npm trusted publishing:
    - GitHub owner: `apazureck`
    - repository: `paged-pdf-js`
    - workflow: `release.yml`
-4. Create and protect a GitHub environment named `npm`.
-5. Publish a GitHub Release tagged exactly as `v<package.version>`, currently
-   `v0.1.0`.
+4. Publish a GitHub Release tagged exactly as `v<package.version>`.
 
-The release workflow validates, builds, and publishes with npm provenance.
-UNPKG and jsDelivr then serve the package automatically:
+The workflow publishes with npm provenance through OIDC, so no long-lived
+`NPM_TOKEN` is stored. UNPKG and jsDelivr then serve the package:
 
 ```text
 https://unpkg.com/paged-pdf-js@0.1.0/dist/paged-pdf.min.js
 https://cdn.jsdelivr.net/npm/paged-pdf-js@0.1.0/dist/paged-pdf.min.js
 ```
 
-## Release sequence
-
-1. Merge a validated version bump to `main`.
-2. Let CI deploy the static site and its current-build downloads.
-3. Publish a GitHub Release with the matching `v<version>` tag.
-4. Confirm the npm package and exact-version UNPKG URL.
-5. Smoke-test the playground, manual, direct bundle, and one generated PDF.
-
-To roll back the site, repoint `/srv/paged-pdf-js/current` to a previous
-directory under `releases/`. npm versions are immutable and must never be
-overwritten; publish a corrective version instead.
+Published npm versions are immutable. Release a corrective version instead of
+overwriting an existing package.

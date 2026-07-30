@@ -208,7 +208,8 @@ image pixels, and PDF output.
 
 ## Development
 
-Requires Node.js 20.19 or later; CI and release jobs use Node.js 24.
+Requires Node.js 20.19+, Python 3.12+, and PHP 8.2+ with the ZIP
+extension; CI and release jobs use Node.js 24 and Python 3.12.
 
 ```bash
 npm install
@@ -225,8 +226,8 @@ checks. Coverage must remain at least 80%.
 
 - The static site build includes the manual and direct downloads under
   `demo-dist/`.
-- A successful `main` CI run triggers the protected SSH deployment workflow
-  for `paged-pdf-js.pazureck.de`.
+- A successful `main` CI run triggers the protected explicit-FTPS deployment:
+  one ZIP upload is validated and unpacked by a one-shot PHP extractor.
 - Publishing a GitHub Release whose tag matches `v<package.version>` runs the
   npm release workflow with provenance.
 - UNPKG serves the npm package automatically; no separate upload is needed.
