@@ -212,6 +212,32 @@ function previousManagedFiles(string $root): array
     return $files;
 }
 
+function removeEmptyParents(string $root, string $relativePath): void
+{
+    $directory = dirname($relativePath);
+    while ($directory !== '.' && $directory !== '') {
+        $candidate = $root . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $directory);
+        if (is_link($candidate)) {
+            throw new RuntimeException('stale-cleanup-failed');
+        }
+        if (!is_dir($candidate)) {
+            $directory = dirname($directory);
+            continue;
+        }
+        $entries = scandir($candidate);
+        if ($entries === false) {
+            throw new RuntimeException('stale-cleanup-failed');
+        }
+        if (count($entries) > 2) {
+            return;
+        }
+        if (!rmdir($candidate)) {
+            throw new RuntimeException('stale-cleanup-failed');
+        }
+        $directory = dirname($directory);
+    }
+}
+
 function publicationOrder(array $files): array
 {
     $rank = static function (string $path): int {
@@ -268,6 +294,9 @@ try {
     if ($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) {
         throw new RuntimeException('deployment-locked');
     }
+    if (!chmod($lockPath, 0600)) {
+        throw new RuntimeException('write-failed');
+    }
     if (!class_exists(ZipArchive::class) || !is_file($archivePath)) {
         throw new RuntimeException('archive-unavailable');
     }
@@ -298,6 +327,22 @@ try {
     }
 
     $previousFiles = previousManagedFiles(__DIR__);
+    foreach (array_diff($previousFiles, $expectedFiles) as $path) {
+        $stale = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
+        $metadata = @lstat($stale);
+        if ($metadata === false) {
+            continue;
+        }
+        if (is_link($stale) || (($metadata['mode'] & 0170000) !== 0100000)) {
+            throw new RuntimeException('stale-cleanup-failed');
+        }
+        ensureSafeParentDirectories(__DIR__, $path);
+        if (!unlink($stale)) {
+            throw new RuntimeException('stale-cleanup-failed');
+        }
+        removeEmptyParents(__DIR__, $path);
+    }
+
     foreach (publicationOrder($expectedFiles) as $path) {
         ensureSafeParentDirectories(__DIR__, $path);
         $staged = $stagingPath . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
@@ -310,13 +355,6 @@ try {
         }
     }
 
-    foreach (array_diff($previousFiles, $expectedFiles) as $path) {
-        ensureSafeParentDirectories(__DIR__, $path);
-        $stale = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
-        if (is_file($stale) && !is_link($stale)) {
-            @unlink($stale);
-        }
-    }
 
     $manifest = base64_decode('__MANIFEST_BASE64__', true);
     if (!is_string($manifest)) {
@@ -333,6 +371,7 @@ try {
         'invalid-archive',
         'invalid-control',
         'invalid-manifest',
+        'stale-cleanup-failed',
         'unsafe-destination',
         'unsafe-parent',
         'write-failed',
@@ -349,7 +388,6 @@ try {
         @flock($lock, LOCK_UN);
         @fclose($lock);
     }
-    @unlink($lockPath);
 }
 
 respond($response, $status);
