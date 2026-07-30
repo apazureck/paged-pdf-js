@@ -64,95 +64,37 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     environment:
       name: production
       url: https://paged-pdf-js.pazureck.de
 
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 1
+
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: paged-pdf-site-${{ github.event.workflow_run.head_sha || github.sha }}
           path: demo-dist
 
-      - name: Configure SSH
+      - name: Upload ZIP and activate it through the one-shot PHP extractor
         env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-
-      - name: Validate deployment settings
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-        run: |
-          [[ "$DEPLOY_HOST" =~ ^[A-Za-z0-9.-]+$ ]]
-          [[ "$DEPLOY_USER" =~ ^[A-Za-z0-9._-]+$ ]]
-          [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]]
-          [[ "$DEPLOY_PATH" != *".."* ]]
-
-      - name: Upload and atomically activate release
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
           RELEASE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
-          RUN_ID: ${{ github.run_id }}
-          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: python scripts/deploy_ftp.py demo-dist
+
+      - name: Smoke-test the public release
         run: |
-          set -euo pipefail
-          tar -czf demo-dist.tar.gz -C demo-dist .
-          sha256sum demo-dist.tar.gz > demo-dist.tar.gz.sha256
-
-          target="${DEPLOY_USER}@${DEPLOY_HOST}"
-          release_id="${RELEASE_SHA}-${RUN_ID}-${RUN_ATTEMPT}"
-          staging="${DEPLOY_PATH}/releases/.upload-${release_id}"
-          release="${DEPLOY_PATH}/releases/${release_id}"
-          previous="$(ssh "$target" "readlink '${DEPLOY_PATH}/current' || true")"
-
-          cleanup_staging() {
-            ssh "$target" "if [ -d '$staging' ]; then rm -r -- '$staging'; fi"
-          }
-          trap cleanup_staging EXIT
-
-          ssh "$target" "mkdir -p '$staging'"
-          scp demo-dist.tar.gz demo-dist.tar.gz.sha256 "$target:$staging/"
-          ssh "$target" "cd '$staging' && sha256sum -c demo-dist.tar.gz.sha256 && tar -xzf demo-dist.tar.gz && rm demo-dist.tar.gz demo-dist.tar.gz.sha256"
-          ssh "$target" "mv '$staging' '$release'"
-          ssh "$target" "ln -sfn '$release' '${DEPLOY_PATH}/current.next' && mv -Tf '${DEPLOY_PATH}/current.next' '${DEPLOY_PATH}/current'"
-
-          if ! curl --fail --show-error --silent --retry 5 --retry-delay 3 \
-            https://paged-pdf-js.pazureck.de/ > /dev/null ||
-             ! curl --fail --show-error --silent --retry 5 --retry-delay 3 \
-            https://paged-pdf-js.pazureck.de/manual.html > /dev/null ||
-             ! curl --fail --show-error --silent --retry 5 --retry-delay 3 \
-            https://paged-pdf-js.pazureck.de/downloads/paged-pdf.min.js > /dev/null; then
-            if [[ "$previous" =~ ^${DEPLOY_PATH}/releases/([a-f0-9]{40}|[a-f0-9]{40}-[0-9]+-[0-9]+)$ ]]; then
-              ssh "$target" "ln -sfn '$previous' '${DEPLOY_PATH}/current.next' && mv -Tf '${DEPLOY_PATH}/current.next' '${DEPLOY_PATH}/current'"
-            fi
-            exit 1
-          fi
-
-          ssh "$target" "
-            set -eu
-            current=\$(readlink '${DEPLOY_PATH}/current')
-            find '${DEPLOY_PATH}/releases' -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' |
-              sort -nr |
-              tail -n +6 |
-              cut -d ' ' -f 2- |
-              while IFS= read -r candidate; do
-                case \"\$candidate\" in
-                  '${DEPLOY_PATH}/releases/'*) ;;
-                  *) exit 1 ;;
-                esac
-                if [ \"\$candidate\" != \"\$current\" ]; then
-                  rm -r -- \"\$candidate\"
-                fi
-              done
-          "
+          curl --fail --show-error --silent --retry 5 --retry-delay 3 \
+            https://paged-pdf-js.pazureck.de/ > /dev/null
+          curl --fail --show-error --silent --retry 5 --retry-delay 3 \
+            https://paged-pdf-js.pazureck.de/manual.html > /dev/null
+          curl --fail --show-error --silent --retry 5 --retry-delay 3 \
+            https://paged-pdf-js.pazureck.de/downloads/paged-pdf.min.js > /dev/null

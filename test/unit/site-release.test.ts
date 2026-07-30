@@ -59,15 +59,21 @@ describe("public site release configuration", () => {
     );
   });
 
-  it("supports legacy rollback and bounds server release retention", async () => {
-    const workflow = await readProjectFile(".github/workflows/deploy.yml");
+  it("uses a one-shot FTPS release and removes stale managed files", async () => {
+    const [workflow, uploader, extractor] = await Promise.all([
+      readProjectFile(".github/workflows/deploy.yml"),
+      readProjectFile("scripts/deploy_ftp.py"),
+      readProjectFile("deploy/ftp-extract-template.php")
+    ]);
 
-    expect(workflow).toContain(
-      "([a-f0-9]{40}|[a-f0-9]{40}-[0-9]+-[0-9]+)"
-    );
-    expect(workflow).toContain("trap cleanup_staging EXIT");
-    expect(workflow).toContain("tail -n +6");
-    expect(workflow).toContain('rm -r -- \\"\\$candidate\\"');
+    expect(workflow).toContain("python scripts/deploy_ftp.py demo-dist");
+    expect(uploader).toContain("finally:");
+    expect(uploader).toContain("ftps.delete(archive.name)");
+    expect(uploader).toContain("ftps.delete(script.name)");
+    expect(extractor).toContain("previousManagedFiles(__DIR__)");
+    expect(extractor).toContain("array_diff($previousFiles, $expectedFiles)");
+    expect(extractor).toContain("@unlink($archivePath)");
+    expect(extractor).toContain("@unlink($scriptPath)");
   });
 
   it("pins every third-party workflow action to a commit", async () => {
