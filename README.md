@@ -1,5 +1,13 @@
 # paged-pdf-js
 
+<p align="center">
+  <img
+    src="https://raw.githubusercontent.com/apazureck/paged-pdf-js/main/demo/public/brand/paged-pdf-js-logo.png"
+    alt="paged-pdf-js logo"
+    width="180"
+  />
+</p>
+
 Convert HTML into paged, vector-oriented PDFs entirely in the browser.
 `paged-pdf-js` uses [Paged.js](https://pagedjs.org/) for CSS Paged Media
 layout, reads the geometry of the resulting page DOM, and writes PDF drawing
