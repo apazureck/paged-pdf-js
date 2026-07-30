@@ -176,6 +176,11 @@ describe("FTP release workflow", () => {
     expect(workflow).toContain("python scripts/deploy_ftp.py demo-dist");
     expect(workflow).not.toMatch(/\b(?:ssh|scp)\b/u);
     expect(workflow).not.toContain("DEPLOY_SSH_KEY");
+    expect(workflow).toContain(
+      "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1"
+    );
+    expect(workflow).toContain('python-version: "3.12"');
+    expect(workflow).toContain("php -m | grep -qx zip");
   });
 
   it("uses encrypted FTPS, an unpredictable one-shot token, and POST", async () => {
