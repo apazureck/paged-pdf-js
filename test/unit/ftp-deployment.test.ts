@@ -115,16 +115,21 @@ async function invokeExtractor(
 }
 
 async function prepareExtractor(
-  entries: Readonly<Record<string, string>>
+  entries: Readonly<Record<string, string>>,
+  options: {
+    readonly directory?: string;
+    readonly suffix?: string;
+  } = {}
 ): Promise<{
   readonly archiveName: string;
   readonly directory: string;
   readonly scriptName: string;
   readonly token: string;
 }> {
-  const directory = await temporaryDirectory();
-  const archiveName = "paged-pdf-release-test.zip";
-  const scriptName = "paged-pdf-release-test.php";
+  const directory = options.directory ?? (await temporaryDirectory());
+  const suffix = options.suffix ?? "test";
+  const archiveName = `paged-pdf-release-${suffix}.zip`;
+  const scriptName = `paged-pdf-release-${suffix}.php`;
   const token = "b".repeat(64);
   const archivePath = join(directory, archiveName);
   await createZip(archivePath, entries);
@@ -135,7 +140,7 @@ async function prepareExtractor(
     archiveSha256: createHash("sha256").update(archive).digest("hex"),
     expectedFiles: Object.keys(entries),
     scriptName,
-    stagingName: "paged-pdf-release-test-staging",
+    stagingName: `paged-pdf-release-${suffix}-staging`,
     token
   });
   await writeFile(join(directory, scriptName), script, "utf8");
@@ -203,6 +208,16 @@ describe("FTP release workflow", () => {
 });
 
 describe("one-shot PHP extractor", () => {
+  it("keeps the deployment lock pathname stable and fails stale deletion", async () => {
+    const template = await readFile(templatePath, "utf8");
+
+    expect(template).not.toContain("@unlink($lockPath)");
+    expect(template).not.toContain("@unlink($stale)");
+    expect(template).toMatch(
+      /if \(!unlink\(\$stale\)\) \{\s*throw new RuntimeException\('stale-cleanup-failed'\);/u
+    );
+  });
+
   it("is valid PHP and limits method, token, archive paths, and archive size", async () => {
     const template = await readFile(templatePath, "utf8");
     await execFile("php", ["-l", templatePath]);
@@ -279,5 +294,58 @@ describe("one-shot PHP extractor", () => {
     await expect(
       access(join(deployment.directory, "..", "escaped-by-archive.txt"))
     ).rejects.toThrow();
+  });
+
+  it("removes stale managed files on a consecutive deployment", async () => {
+    const first = await prepareExtractor({
+      "assets/old.js": "old",
+      "index.html": "<h1>First</h1>"
+    });
+    await invokeExtractor(first.directory, first.scriptName, first.token);
+
+    const second = await prepareExtractor(
+      {
+        "assets/new.js": "new",
+        "index.html": "<h1>Second</h1>"
+      },
+      { directory: first.directory, suffix: "second" }
+    );
+    await expect(
+      invokeExtractor(second.directory, second.scriptName, second.token)
+    ).resolves.toEqual({ ok: true });
+    await expect(
+      access(join(first.directory, "assets", "old.js"))
+    ).rejects.toThrow();
+    await expect(
+      readFile(join(first.directory, "assets", "new.js"), "utf8")
+    ).resolves.toBe("new");
+  });
+
+  it("supports managed file-to-directory and directory-to-file changes", async () => {
+    const first = await prepareExtractor({
+      "index.html": "<h1>First</h1>",
+      "legacy": "old file",
+      "old-parent/child.txt": "old child"
+    });
+    await invokeExtractor(first.directory, first.scriptName, first.token);
+
+    const second = await prepareExtractor(
+      {
+        "index.html": "<h1>Second</h1>",
+        "legacy/new.txt": "new child",
+        "old-parent": "new file"
+      },
+      { directory: first.directory, suffix: "transition" }
+    );
+
+    await expect(
+      invokeExtractor(second.directory, second.scriptName, second.token)
+    ).resolves.toEqual({ ok: true });
+    await expect(
+      readFile(join(first.directory, "legacy", "new.txt"), "utf8")
+    ).resolves.toBe("new child");
+    await expect(
+      readFile(join(first.directory, "old-parent"), "utf8")
+    ).resolves.toBe("new file");
   });
 });
