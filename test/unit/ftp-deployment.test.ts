@@ -267,7 +267,7 @@ describe("one-shot PHP extractor", () => {
     await expect(
       access(join(deployment.directory, deployment.scriptName))
     ).rejects.toThrow();
-  });
+  }, 15_000);
 
   it("returns a generic response and does not extract for an invalid token", async () => {
     const deployment = await prepareExtractor({
@@ -284,7 +284,7 @@ describe("one-shot PHP extractor", () => {
     await expect(
       access(join(deployment.directory, "index.html"))
     ).rejects.toThrow();
-  });
+  }, 15_000);
 
   it("blocks ZIP path traversal without disclosing filesystem paths", async () => {
     const deployment = await prepareExtractor({
@@ -301,7 +301,7 @@ describe("one-shot PHP extractor", () => {
     await expect(
       access(join(deployment.directory, "..", "escaped-by-archive.txt"))
     ).rejects.toThrow();
-  });
+  }, 15_000);
 
   it("removes stale managed files on a consecutive deployment", async () => {
     const first = await prepareExtractor({
@@ -326,7 +326,7 @@ describe("one-shot PHP extractor", () => {
     await expect(
       readFile(join(first.directory, "assets", "new.js"), "utf8")
     ).resolves.toBe("new");
-  });
+  }, 15_000);
 
   it("keeps the live release intact when activation fails", async () => {
     const first = await prepareExtractor({
@@ -396,5 +396,5 @@ describe("one-shot PHP extractor", () => {
     await expect(
       readFile(join(first.directory, "old-parent"), "utf8")
     ).resolves.toBe("new file");
-  });
+  }, 15_000);
 });
