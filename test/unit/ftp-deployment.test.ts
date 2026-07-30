@@ -2,6 +2,7 @@ import { execFile as execFileCallback } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   access,
+  mkdir,
   mkdtemp,
   readFile,
   rm,
@@ -325,6 +326,33 @@ describe("one-shot PHP extractor", () => {
       readFile(join(first.directory, "assets", "new.js"), "utf8")
     ).resolves.toBe("new");
   });
+
+  it("keeps the live release intact when activation fails", async () => {
+    const first = await prepareExtractor({
+      "assets/old.js": "old",
+      "index.html": "<h1>First</h1>"
+    });
+    await invokeExtractor(first.directory, first.scriptName, first.token);
+    await mkdir(join(first.directory, "blocked"));
+
+    const second = await prepareExtractor(
+      {
+        blocked: "cannot replace an unmanaged directory",
+        "index.html": "<h1>Second</h1>"
+      },
+      { directory: first.directory, suffix: "failed-activation" }
+    );
+
+    await expect(
+      invokeExtractor(second.directory, second.scriptName, second.token)
+    ).resolves.toEqual({ error: "unsafe-destination" });
+    await expect(
+      readFile(join(first.directory, "assets", "old.js"), "utf8")
+    ).resolves.toBe("old");
+    await expect(
+      readFile(join(first.directory, "index.html"), "utf8")
+    ).resolves.toContain("First");
+  }, 15_000);
 
   it("supports managed file-to-directory and directory-to-file changes", async () => {
     const first = await prepareExtractor({
