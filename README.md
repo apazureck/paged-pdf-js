@@ -227,7 +227,8 @@ checks. Coverage must remain at least 80%.
 - The static site build includes the manual and direct downloads under
   `demo-dist/`.
 - A successful `main` CI run triggers the protected explicit-FTPS deployment:
-  one ZIP upload is validated and unpacked by a one-shot PHP extractor.
+  one ZIP upload is validated and transactionally activated by a one-shot PHP
+  extractor, with automatic restoration of the prior release on failure.
 - Publishing a GitHub Release whose tag matches `v<package.version>` runs the
   npm release workflow with provenance.
 - UNPKG serves the npm package automatically; no separate upload is needed.

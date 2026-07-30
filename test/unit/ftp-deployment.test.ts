@@ -2,7 +2,6 @@ import { execFile as execFileCallback } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
   access,
-  mkdir,
   mkdtemp,
   readFile,
   rm,
@@ -120,6 +119,7 @@ async function prepareExtractor(
   options: {
     readonly directory?: string;
     readonly suffix?: string;
+    readonly transformScript?: (script: string) => string;
   } = {}
 ): Promise<{
   readonly archiveName: string;
@@ -136,7 +136,7 @@ async function prepareExtractor(
   await createZip(archivePath, entries);
   const archive = await readFile(archivePath);
   const template = await readFile(templatePath, "utf8");
-  const script = renderExtractor(template, {
+  const renderedScript = renderExtractor(template, {
     archiveName,
     archiveSha256: createHash("sha256").update(archive).digest("hex"),
     expectedFiles: Object.keys(entries),
@@ -144,6 +144,7 @@ async function prepareExtractor(
     stagingName: `paged-pdf-release-${suffix}-staging`,
     token
   });
+  const script = options.transformScript?.(renderedScript) ?? renderedScript;
   await writeFile(join(directory, scriptName), script, "utf8");
 
   return { archiveName, directory, scriptName, token };
@@ -214,14 +215,14 @@ describe("FTP release workflow", () => {
 });
 
 describe("one-shot PHP extractor", () => {
-  it("keeps the deployment lock pathname stable and fails stale deletion", async () => {
+  it("keeps a stable lock and uses reversible release activation", async () => {
     const template = await readFile(templatePath, "utf8");
 
     expect(template).not.toContain("@unlink($lockPath)");
     expect(template).not.toContain("@unlink($stale)");
-    expect(template).toMatch(
-      /if \(!unlink\(\$stale\)\) \{\s*throw new RuntimeException\('stale-cleanup-failed'\);/u
-    );
+    expect(template).toContain("backupLiveFiles");
+    expect(template).toContain("rollbackRelease");
+    expect(template).toContain("'rollback-failed'");
   });
 
   it("is valid PHP and limits method, token, archive paths, and archive size", async () => {
@@ -333,25 +334,40 @@ describe("one-shot PHP extractor", () => {
       "index.html": "<h1>First</h1>"
     });
     await invokeExtractor(first.directory, first.scriptName, first.token);
-    await mkdir(join(first.directory, "blocked"));
 
     const second = await prepareExtractor(
       {
-        blocked: "cannot replace an unmanaged directory",
+        "assets/new.js": "new",
         "index.html": "<h1>Second</h1>"
       },
-      { directory: first.directory, suffix: "failed-activation" }
+      {
+        directory: first.directory,
+        suffix: "failed-activation",
+        transformScript: (script) =>
+          script.replace(
+            "        $publishedFiles = [...$publishedFiles, $path];",
+            [
+              "        $publishedFiles = [...$publishedFiles, $path];",
+              "        if ($path === 'assets/new.js') {",
+              "            throw new RuntimeException('write-failed');",
+              "        }"
+            ].join("\n")
+          )
+      }
     );
 
     await expect(
       invokeExtractor(second.directory, second.scriptName, second.token)
-    ).resolves.toEqual({ error: "unsafe-destination" });
+    ).resolves.toEqual({ error: "write-failed" });
     await expect(
       readFile(join(first.directory, "assets", "old.js"), "utf8")
     ).resolves.toBe("old");
     await expect(
       readFile(join(first.directory, "index.html"), "utf8")
     ).resolves.toContain("First");
+    await expect(
+      access(join(first.directory, "assets", "new.js"))
+    ).rejects.toThrow();
   }, 15_000);
 
   it("supports managed file-to-directory and directory-to-file changes", async () => {

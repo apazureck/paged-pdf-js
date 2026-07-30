@@ -105,8 +105,14 @@ The PHP extractor returns `404` for a wrong method or token. It rejects:
 - an unexpected checksum or file list;
 - symlinked destination parents and non-file destination collisions.
 
-Files are extracted into a private staging directory. Assets are published
-before HTML entry points, with `index.html` last. The managed-file manifest at
+Files are extracted into a private staging directory. Before activation,
+existing managed files and the prior manifest move into a permission-restricted
+backup. Assets are then published before HTML entry points, with `index.html`
+last. If any activation step fails, the extractor removes newly published files
+and restores the complete prior release. A failed rollback keeps its backup for
+manual recovery and returns the fixed `rollback-failed` category.
+
+The managed-file manifest at
 `.well-known/paged-pdf-managed-files.json` allows later deployments to remove
 only stale files owned by this project. Unrelated hosting files are not
 deleted.

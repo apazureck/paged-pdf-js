@@ -238,6 +238,206 @@ function removeEmptyParents(string $root, string $relativePath): void
     }
 }
 
+function deepestPathsFirst(array $files): array
+{
+    usort($files, static function (string $left, string $right): int {
+        $depthOrder = substr_count($right, '/') <=> substr_count($left, '/');
+        return $depthOrder !== 0 ? $depthOrder : strcmp($left, $right);
+    });
+    return $files;
+}
+
+function hasManagedDescendant(string $path, array $managedFiles): bool
+{
+    $prefix = $path . '/';
+    foreach ($managedFiles as $managed) {
+        if (str_starts_with($managed, $prefix)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function preflightDestinations(string $root, array $expectedFiles, array $previousFiles): void
+{
+    foreach ($expectedFiles as $path) {
+        $parent = dirname($path);
+        $relativeParent = '';
+        if ($parent !== '.') {
+            foreach (explode('/', $parent) as $part) {
+                $relativeParent = $relativeParent === ''
+                    ? $part
+                    : $relativeParent . '/' . $part;
+                $candidate = $root . DIRECTORY_SEPARATOR
+                    . str_replace('/', DIRECTORY_SEPARATOR, $relativeParent);
+                $metadata = @lstat($candidate);
+                if ($metadata === false) {
+                    break;
+                }
+                if (is_link($candidate)) {
+                    throw new RuntimeException('unsafe-parent');
+                }
+                $type = $metadata['mode'] & 0170000;
+                if ($type === 0040000) {
+                    continue;
+                }
+                if ($type === 0100000 && in_array($relativeParent, $previousFiles, true)) {
+                    break;
+                }
+                throw new RuntimeException('unsafe-parent');
+            }
+        }
+
+        $destination = $root . DIRECTORY_SEPARATOR
+            . str_replace('/', DIRECTORY_SEPARATOR, $path);
+        $metadata = @lstat($destination);
+        if ($metadata === false) {
+            continue;
+        }
+        if (is_link($destination)) {
+            throw new RuntimeException('unsafe-destination');
+        }
+        $type = $metadata['mode'] & 0170000;
+        if ($type === 0100000) {
+            continue;
+        }
+        if ($type === 0040000 && hasManagedDescendant($path, $previousFiles)) {
+            continue;
+        }
+        throw new RuntimeException('unsafe-destination');
+    }
+}
+
+function backupLiveFiles(
+    string $root,
+    string $backup,
+    array $previousFiles,
+    array $expectedFiles
+): array {
+    if (file_exists($backup) || is_link($backup)) {
+        return ['created' => false, 'error' => 'write-failed', 'files' => []];
+    }
+    if (!mkdir($backup, 0700)) {
+        return ['created' => false, 'error' => 'write-failed', 'files' => []];
+    }
+
+    $files = array_values(array_unique([
+        ...$previousFiles,
+        ...$expectedFiles,
+        MANIFEST_PATH,
+    ]));
+    $backedUp = [];
+    try {
+        foreach (deepestPathsFirst($files) as $path) {
+            $source = $root . DIRECTORY_SEPARATOR
+                . str_replace('/', DIRECTORY_SEPARATOR, $path);
+            $metadata = @lstat($source);
+            if ($metadata === false || (($metadata['mode'] & 0170000) === 0040000)) {
+                continue;
+            }
+            if (is_link($source) || (($metadata['mode'] & 0170000) !== 0100000)) {
+                throw new RuntimeException('stale-cleanup-failed');
+            }
+            ensureSafeParentDirectories($backup, $path);
+            $destination = $backup . DIRECTORY_SEPARATOR
+                . str_replace('/', DIRECTORY_SEPARATOR, $path);
+            if (!rename($source, $destination)) {
+                throw new RuntimeException('stale-cleanup-failed');
+            }
+            $backedUp = [...$backedUp, $path];
+            removeEmptyParents($root, $path);
+        }
+    } catch (Throwable $error) {
+        $allowed = [
+            'stale-cleanup-failed',
+            'unsafe-parent',
+            'write-failed',
+        ];
+        $category = in_array($error->getMessage(), $allowed, true)
+            ? $error->getMessage()
+            : 'stale-cleanup-failed';
+        return ['created' => true, 'error' => $category, 'files' => $backedUp];
+    }
+    return ['created' => true, 'error' => null, 'files' => $backedUp];
+}
+
+function rollbackRelease(
+    string $root,
+    string $backup,
+    array $backedUpFiles,
+    array $publishedFiles
+): bool {
+    $success = true;
+    foreach (deepestPathsFirst(array_values(array_unique($publishedFiles))) as $path) {
+        $destination = $root . DIRECTORY_SEPARATOR
+            . str_replace('/', DIRECTORY_SEPARATOR, $path);
+        $metadata = @lstat($destination);
+        if ($metadata === false) {
+            continue;
+        }
+        if (
+            is_link($destination)
+            || (($metadata['mode'] & 0170000) !== 0100000)
+            || !unlink($destination)
+        ) {
+            $success = false;
+            continue;
+        }
+        try {
+            removeEmptyParents($root, $path);
+        } catch (Throwable) {
+            $success = false;
+        }
+    }
+
+    $restoreOrder = array_reverse(deepestPathsFirst(array_values(array_unique($backedUpFiles))));
+    foreach ($restoreOrder as $path) {
+        $source = $backup . DIRECTORY_SEPARATOR
+            . str_replace('/', DIRECTORY_SEPARATOR, $path);
+        $sourceMetadata = @lstat($source);
+        if (
+            $sourceMetadata === false
+            || is_link($source)
+            || (($sourceMetadata['mode'] & 0170000) !== 0100000)
+        ) {
+            $success = false;
+            continue;
+        }
+        $destination = $root . DIRECTORY_SEPARATOR
+            . str_replace('/', DIRECTORY_SEPARATOR, $path);
+        $destinationMetadata = @lstat($destination);
+        if ($destinationMetadata !== false) {
+            if (
+                is_link($destination)
+                || (($destinationMetadata['mode'] & 0170000) !== 0040000)
+            ) {
+                $success = false;
+                continue;
+            }
+            $entries = scandir($destination);
+            if ($entries === false || count($entries) > 2 || !rmdir($destination)) {
+                $success = false;
+                continue;
+            }
+        }
+        try {
+            ensureSafeParentDirectories($root, $path);
+        } catch (Throwable) {
+            $success = false;
+            continue;
+        }
+        if (!rename($source, $destination)) {
+            $success = false;
+        }
+    }
+
+    if ($success) {
+        removeTree($backup);
+        $success = !file_exists($backup) && !is_link($backup);
+    }
+    return $success;
+}
+
 function publicationOrder(array $files): array
 {
     $rank = static function (string $path): int {
@@ -275,6 +475,7 @@ $stagingName = '__STAGING_NAME__';
 $archivePath = __DIR__ . DIRECTORY_SEPARATOR . $archiveName;
 $scriptPath = __DIR__ . DIRECTORY_SEPARATOR . $scriptName;
 $stagingPath = __DIR__ . DIRECTORY_SEPARATOR . $stagingName;
+$backupPath = __DIR__ . DIRECTORY_SEPARATOR . $stagingName . '-backup';
 $lockPath = __DIR__ . DIRECTORY_SEPARATOR . '.paged-pdf-deploy.lock';
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
@@ -286,6 +487,10 @@ if ($providedToken === '' || !hash_equals('__TOKEN__', $providedToken)) {
 }
 
 $lock = null;
+$backupCreated = false;
+$preserveBackup = false;
+$backedUpFiles = [];
+$publishedFiles = [];
 $response = ['error' => 'deployment-failed'];
 $status = 500;
 try {
@@ -327,43 +532,53 @@ try {
     }
 
     $previousFiles = previousManagedFiles(__DIR__);
-    foreach (array_diff($previousFiles, $expectedFiles) as $path) {
-        $stale = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
-        $metadata = @lstat($stale);
-        if ($metadata === false) {
-            continue;
-        }
-        if (is_link($stale) || (($metadata['mode'] & 0170000) !== 0100000)) {
-            throw new RuntimeException('stale-cleanup-failed');
-        }
-        ensureSafeParentDirectories(__DIR__, $path);
-        if (!unlink($stale)) {
-            throw new RuntimeException('stale-cleanup-failed');
-        }
-        removeEmptyParents(__DIR__, $path);
+    preflightDestinations(__DIR__, $expectedFiles, $previousFiles);
+    $backupResult = backupLiveFiles(
+        __DIR__,
+        $backupPath,
+        $previousFiles,
+        $expectedFiles
+    );
+    $backupCreated = $backupResult['created'];
+    $backedUpFiles = $backupResult['files'];
+    if (is_string($backupResult['error'])) {
+        throw new RuntimeException($backupResult['error']);
     }
 
     foreach (publicationOrder($expectedFiles) as $path) {
         ensureSafeParentDirectories(__DIR__, $path);
         $staged = $stagingPath . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
         $destination = __DIR__ . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path);
-        if (is_link($destination) || (file_exists($destination) && !is_file($destination))) {
+        if (is_link($destination) || file_exists($destination)) {
             throw new RuntimeException('unsafe-destination');
         }
         if (!rename($staged, $destination)) {
             throw new RuntimeException('write-failed');
         }
+        $publishedFiles = [...$publishedFiles, $path];
     }
-
 
     $manifest = base64_decode('__MANIFEST_BASE64__', true);
     if (!is_string($manifest)) {
         throw new RuntimeException('invalid-control');
     }
     atomicWrite(__DIR__, MANIFEST_PATH, $manifest . "\n");
+    $publishedFiles = [...$publishedFiles, MANIFEST_PATH];
     $response = ['ok' => true];
     $status = 200;
 } catch (Throwable $error) {
+    $rollbackRequired = $backupCreated
+        && ($backedUpFiles !== [] || $publishedFiles !== []);
+    $rollbackSucceeded = !$rollbackRequired || rollbackRelease(
+        __DIR__,
+        $backupPath,
+        $backedUpFiles,
+        $publishedFiles
+    );
+    if (!$rollbackSucceeded) {
+        $preserveBackup = true;
+        $error = new RuntimeException('rollback-failed');
+    }
     $allowed = [
         'archive-checksum-failed',
         'archive-unavailable',
@@ -371,6 +586,7 @@ try {
         'invalid-archive',
         'invalid-control',
         'invalid-manifest',
+        'rollback-failed',
         'stale-cleanup-failed',
         'unsafe-destination',
         'unsafe-parent',
@@ -382,6 +598,9 @@ try {
     $response = ['error' => $category];
 } finally {
     removeTree($stagingPath);
+    if (!$preserveBackup) {
+        removeTree($backupPath);
+    }
     @unlink($archivePath);
     @unlink($scriptPath);
     if (is_resource($lock)) {

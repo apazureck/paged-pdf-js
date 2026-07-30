@@ -71,7 +71,8 @@ describe("public site release configuration", () => {
     expect(uploader).toContain("ftps.delete(archive.name)");
     expect(uploader).toContain("ftps.delete(script.name)");
     expect(extractor).toContain("previousManagedFiles(__DIR__)");
-    expect(extractor).toContain("array_diff($previousFiles, $expectedFiles)");
+    expect(extractor).toContain("backupLiveFiles");
+    expect(extractor).toContain("rollbackRelease");
     expect(extractor).toContain("@unlink($archivePath)");
     expect(extractor).toContain("@unlink($scriptPath)");
   });
