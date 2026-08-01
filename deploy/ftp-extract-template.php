@@ -496,7 +496,10 @@ $status = 500;
 try {
     set_time_limit(300);
     $lock = fopen($lockPath, 'c');
-    if ($lock === false || !flock($lock, LOCK_EX | LOCK_NB)) {
+    if ($lock === false) {
+        throw new RuntimeException('lock-unavailable');
+    }
+    if (!flock($lock, LOCK_EX | LOCK_NB)) {
         throw new RuntimeException('deployment-locked');
     }
     if (!chmod($lockPath, 0600)) {
@@ -582,6 +585,7 @@ try {
     $allowed = [
         'archive-checksum-failed',
         'archive-unavailable',
+        'lock-unavailable',
         'deployment-locked',
         'invalid-archive',
         'invalid-control',
