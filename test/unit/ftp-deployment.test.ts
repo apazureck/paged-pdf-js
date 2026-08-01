@@ -197,6 +197,30 @@ describe("FTP release workflow", () => {
     expect(uploader).not.toContain("?token=");
   });
 
+  it("reports the failing FTPS stage without exposing server details", async () => {
+    const source = [
+      "from unittest.mock import patch",
+      "from scripts.deploy_ftp import Configuration, DeploymentStageError, Ftps",
+      "class FakeFtps:",
+      "    def __init__(self, **_kwargs): pass",
+      "    def connect(self, *_args): pass",
+      "    def login(self, *_args): raise RuntimeError('sensitive-server-detail')",
+      "    def close(self): pass",
+      "settings = Configuration('example.com', 21, 'user', 'password', '.', 'a' * 40)",
+      "with patch('scripts.deploy_ftp.FTP_TLS', FakeFtps):",
+      "    try:",
+      "        with Ftps(settings): pass",
+      "    except DeploymentStageError as error:",
+      "        print(str(error))"
+    ].join("\n");
+    const { stdout } = await execFile("python", ["-c", source]);
+
+    expect(stdout).toContain("Deployment stage: connect.");
+    expect(stdout).toContain("Deployment stage: authenticate.");
+    expect(stdout).toContain("Deployment failed during authenticate.");
+    expect(stdout).not.toContain("sensitive-server-detail");
+  });
+
   it("rejects unsafe remote directories before making a connection", async () => {
     await expect(
       execFile("python", [uploaderPath, "--check-config"], {
