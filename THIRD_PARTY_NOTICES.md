@@ -14,3 +14,12 @@ dependency is included in its npm package and source repository.
 
 Development and test dependencies are not included in the published runtime
 bundle. See `package-lock.json` for the complete dependency graph.
+
+## Demo content
+
+The long-form pagination example contains abridged passages from *Alice's
+Adventures in Wonderland* by Lewis Carroll, first published in 1865. The text
+is sourced from [Project Gutenberg eBook #11](https://www.gutenberg.org/ebooks/11),
+which identifies the work as public domain in the United States. Lewis Carroll
+died in 1898, so the original text is also in the public domain in
+life-plus-70-year jurisdictions.

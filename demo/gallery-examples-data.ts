@@ -17,6 +17,71 @@ and vector shapes.</p>`;
 const png =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
+const aliceLongFormHtml = `<article class="book">
+  <section class="front-matter title-page">
+    <p class="eyebrow">Long-form typesetting specimen</p>
+    <h1>Alice's Adventures in Wonderland</h1>
+    <p class="book-author">Lewis Carroll</p>
+    <p class="book-deck">Selected passages from the first three chapters, arranged to test running heads and page-number restarts.</p>
+    <p class="source-note">Public-domain text, first published in 1865. Source: <a href="https://www.gutenberg.org/ebooks/11">Project Gutenberg eBook #11</a>.</p>
+  </section>
+  <section class="front-matter contents-page">
+    <p class="eyebrow">Contents</p>
+    <h1>Three chapters</h1>
+    <ol class="contents">
+      <li>Down the Rabbit-Hole</li>
+      <li>The Pool of Tears</li>
+      <li>A Caucus-Race and a Long Tale</li>
+    </ol>
+    <p class="reader-note">The preliminary pages use lower-case Roman numerals. Chapter I restarts the page counter at Arabic 1.</p>
+  </section>
+  <section class="chapter chapter-start">
+    <h1>Chapter I: Down the Rabbit-Hole</h1>
+    <div class="chapter-page">
+      <p>Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, "and what is the use of a book," thought Alice, "without pictures or conversations?"</p>
+      <p>So she was considering in her own mind, as well as she could, for the hot day made her feel very sleepy and stupid, whether the pleasure of making a daisy-chain would be worth the trouble of getting up and picking the daisies, when suddenly a White Rabbit with pink eyes ran close by her.</p>
+      <p>There was nothing so very remarkable in that; nor did Alice think it so very much out of the way to hear the Rabbit say to itself, "Oh dear! Oh dear! I shall be late!" But when the Rabbit actually took a watch out of its waistcoat-pocket, and looked at it, and then hurried on, Alice started to her feet.</p>
+      <p>Burning with curiosity, she ran across the field after it, and fortunately was just in time to see it pop down a large rabbit-hole under the hedge. In another moment down went Alice after it, never once considering how in the world she was to get out again.</p>
+    </div>
+    <div class="chapter-page chapter-continuation">
+      <p>The rabbit-hole went straight on like a tunnel for some way, and then dipped suddenly down, so suddenly that Alice had not a moment to think about stopping herself before she found herself falling down a very deep well.</p>
+      <p>Either the well was very deep, or she fell very slowly, for she had plenty of time as she went down to look about her and to wonder what was going to happen next. She looked at the sides of the well, and noticed that they were filled with cupboards and book-shelves; here and there she saw maps and pictures hung upon pegs.</p>
+      <p>Down, down, down. Would the fall never come to an end? Alice wondered how many miles she had fallen and whether she might come out among the people who walked with their heads downward. There was nothing else to do, so she soon began talking again about Dinah, her cat.</p>
+      <p>She was dozing off when suddenly, thump! thump! down she came upon a heap of sticks and dry leaves, and the fall was over. Alice jumped to her feet. Before her was another long passage, and the White Rabbit was still in sight, hurrying down it.</p>
+    </div>
+  </section>
+  <section class="chapter">
+    <h1>Chapter II: The Pool of Tears</h1>
+    <div class="chapter-page">
+      <p>"Curiouser and curiouser!" cried Alice; "now I'm opening out like the largest telescope that ever was! Good-bye, feet!" For when she looked down at her feet, they seemed to be almost out of sight, they were getting so far off.</p>
+      <p>Just then her head struck against the roof of the hall: in fact she was now more than nine feet high, and she at once took up the little golden key and hurried off to the garden door.</p>
+      <p>Poor Alice! It was as much as she could do, lying down on one side, to look through into the garden with one eye; but to get through was more hopeless than ever. She sat down and began to cry again.</p>
+      <p>She went on shedding gallons of tears, until there was a large pool all round her, about four inches deep and reaching half down the hall. After a time she heard a little pattering of feet in the distance, and hastily dried her eyes to see what was coming.</p>
+    </div>
+    <div class="chapter-page chapter-continuation">
+      <p>It was the White Rabbit returning, splendidly dressed, with a pair of white kid gloves in one hand and a large fan in the other. Alice began, in a low, timid voice, "If you please, sir--" The Rabbit started violently, dropped the gloves and the fan, and hurried away into the darkness.</p>
+      <p>Alice took up the fan and gloves. "Dear, dear! How queer everything is today! And yesterday things went on just as usual. I wonder if I've been changed in the night?"</p>
+      <p>As she said these words her foot slipped, and in another moment, splash! she was up to her chin in salt water. She soon made out that she was in the pool of tears which she had wept when she was nine feet high.</p>
+      <p>Just then she heard something splashing about in the pool a little way off. At first she thought it must be a walrus or hippopotamus, but then she remembered how small she was now, and soon made out that it was only a mouse that had slipped in like herself.</p>
+    </div>
+  </section>
+  <section class="chapter">
+    <h1>Chapter III: A Caucus-Race and a Long Tale</h1>
+    <div class="chapter-page">
+      <p>They were indeed a queer-looking party that assembled on the bank--the birds with draggled feathers, the animals with their fur clinging close to them, and all dripping wet, cross, and uncomfortable.</p>
+      <p>The first question of course was how to get dry again. They had a consultation about this, and after a few minutes it seemed quite natural to Alice to find herself talking familiarly with them, as if she had known them all her life.</p>
+      <p>At last the Mouse, who seemed to be a person of authority among them, called out, "Sit down, all of you, and listen to me! I'll soon make you dry enough!" They all sat down at once, in a large ring, with the Mouse in the middle.</p>
+      <p>The Mouse began the driest thing it knew, a history of William the Conqueror, but Alice remained as wet as ever. In that case, said the Dodo solemnly, the meeting ought to adopt more energetic remedies.</p>
+    </div>
+    <div class="chapter-page chapter-continuation">
+      <p>"What I was going to say," said the Dodo in an offended tone, "was that the best thing to get us dry would be a Caucus-race." Alice asked what a Caucus-race was. The Dodo replied that the best way to explain it was to do it.</p>
+      <p>First it marked out a race-course, in a sort of circle--the exact shape did not matter--and then all the party were placed along the course, here and there. There was no "One, two, three, and away," but they began running when they liked and left off when they liked.</p>
+      <p>When they had been running half an hour or so, and were quite dry again, the Dodo suddenly called out, "The race is over!" They all crowded round it, panting, and asking, "But who has won?"</p>
+      <p>At last the Dodo said, "Everybody has won, and all must have prizes." Alice pulled a box of comfits from her pocket and handed them round. There was exactly one apiece, all round.</p>
+    </div>
+  </section>
+</article>`;
+
 export const galleryExamples = [
   {
     id: "page-size",
@@ -111,17 +176,24 @@ export const galleryExamples = [
   {
     id: "running-content",
     group: "Generated content",
-    title: "Running headers & counters",
-    shortTitle: "Running content",
-    summary: "Chapter strings are reused in left and right page margins.",
+    title: "Long-form chapters & page-number reset",
+    shortTitle: "Chapters & numbering",
+    summary:
+      "A public-domain story demonstrates changing running heads and Roman-to-Arabic page numbering.",
     support: "partial",
-    features: ["string-set", "string()", ":left", ":right"],
+    features: [
+      "long-form flow",
+      "string-set",
+      "string()",
+      "counter-reset",
+      "counter styles"
+    ],
     compareNotes: [
-      "The HTML pane is authoritative for margin boxes.",
+      "The Paged.js HTML pane shows changing chapter heads and the numbering restart.",
       "Generated running text and counters may be absent from the PDF."
     ],
-    html: `<article><section class="chapter"><h1>Coast</h1>${prose}${prose}${prose}</section><section class="chapter"><h1>Forest</h1>${prose}${prose}${prose}</section><section class="chapter"><h1>High ground</h1>${prose}${prose}</section></article>`,
-    css: `@page { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page) " of " counter(pages); } } @page :left { @top-left { content: string(chapter); } } @page :right { @top-right { content: string(chapter); } } ${baseCss} .chapter { break-before: page; } .chapter:first-child { break-before: auto; } .chapter h1 { string-set: chapter content(text); }`
+    html: aliceLongFormHtml,
+    css: `@page front-matter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, lower-roman); font: 8pt Arial; } } @page chapter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, decimal); font: 8pt Arial; } } @page chapter:left { @top-left { content: string(chapter); font: 700 7pt Arial; } } @page chapter:right { @top-right { content: string(chapter); font: 700 7pt Arial; } } ${baseCss} body { font-size: 10pt; line-height: 1.45; } .book h1 { font-size: 22pt; } .front-matter { page: front-matter; } .title-page { break-after: page; padding-top: 25mm; } .book-author { color: #c9472d; font: 700 13pt Arial; } .book-deck { margin-top: 14mm; font-size: 13pt; line-height: 1.4; } .source-note, .reader-note { margin-top: 18mm; color: #536871; font: 8pt/1.5 Arial; } .source-note a { color: #126c86; } .contents-page { break-before: page; } .contents { margin: 12mm 0 0; padding: 0; list-style-position: inside; font: 700 12pt/2 Arial; } .chapter { page: chapter; break-before: page; } .chapter-start { counter-reset: page 1; } .chapter h1 { string-set: chapter content(text); } .chapter p { margin-bottom: 3mm; } .chapter-continuation { break-before: page; }`
   },
   {
     id: "footnotes",

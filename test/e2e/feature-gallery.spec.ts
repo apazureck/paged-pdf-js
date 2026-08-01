@@ -79,19 +79,21 @@ test("changes running chapter headers and restarts page numbering", async ({
           : getComputedStyle(marginContent, "::after").content;
       };
 
+      const headers = [
+        generatedContent(
+          ".pagedjs_margin-top-left .pagedjs_margin-content"
+        ),
+        generatedContent(
+          ".pagedjs_margin-top-right .pagedjs_margin-content"
+        )
+      ];
       return {
         className: element.getAttribute("class") ?? "",
         counterReset: getComputedStyle(element).counterReset,
         footer: generatedContent(
           ".pagedjs_margin-bottom-center .pagedjs_margin-content"
         ),
-        header:
-          generatedContent(
-            ".pagedjs_margin-top-left .pagedjs_margin-content"
-          ) ||
-          generatedContent(
-            ".pagedjs_margin-top-right .pagedjs_margin-content"
-          )
+        header: headers.find((content) => content !== "none") ?? "none"
       };
     })
   );
