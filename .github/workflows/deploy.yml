@@ -48,11 +48,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Verify deployment runtimes
-        run: |
-          python --version
-          php --version
-          php -m | grep -qx zip
+      - name: Verify deployment runtime
+        run: python --version
 
       - run: npm ci
       - run: npm audit --audit-level=high
@@ -94,7 +91,7 @@ jobs:
           name: paged-pdf-site-${{ github.event.workflow_run.head_sha || github.sha }}
           path: demo-dist
 
-      - name: Upload ZIP and activate it through the one-shot PHP extractor
+      - name: Activate release with transactional FTPS
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_PORT: ${{ secrets.FTP_PORT }}

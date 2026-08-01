@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import io
 import json
 import os
 import re
@@ -30,6 +31,7 @@ COMMIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 SAFE_PART = re.compile(r"^[A-Za-z0-9._-]+$")
 MAX_FILES = 5000
 MAX_BYTES = 150 * 1024 * 1024
+MANIFEST_PATH = ".well-known/paged-pdf-managed-files.json"
 Result = TypeVar("Result")
 
 
@@ -113,6 +115,26 @@ def configuration() -> Configuration:
     )
 
 
+def safe_release_path(raw_path: str) -> str:
+    """Validate a relative path before placing it in an FTP command."""
+    if not raw_path or raw_path.startswith(("/", "\\")) or "\0" in raw_path:
+        raise ValueError("Release path is unsafe.")
+    parts = raw_path.split("/")
+    if any(
+        part in {"", ".", ".."} or SAFE_PART.fullmatch(part) is None
+        for part in parts
+    ):
+        raise ValueError("Release path is unsafe.")
+    return PurePosixPath(*parts).as_posix()
+
+
+def is_reserved_release_path(path: str) -> bool:
+    return path == MANIFEST_PATH or any(
+        part.startswith((".paged-pdf-stage-", ".paged-pdf-backup-"))
+        for part in path.split("/")
+    )
+
+
 def release_files(root: Path) -> dict[str, Path]:
     resolved_root = root.resolve()
     if not resolved_root.is_dir():
@@ -125,13 +147,14 @@ def release_files(root: Path) -> dict[str, Path]:
         if not path.is_file():
             continue
         relative = path.relative_to(resolved_root).as_posix()
-        if (
-            relative.startswith("/")
-            or "\\" in relative
-            or "\0" in relative
-            or any(part in {"", ".", ".."} for part in relative.split("/"))
-        ):
-            raise ConfigurationError("The deployment directory contains an unsafe path.")
+        try:
+            relative = safe_release_path(relative)
+        except ValueError as error:
+            raise ConfigurationError(
+                "The deployment directory contains an unsafe path."
+            ) from error
+        if is_reserved_release_path(relative):
+            raise ConfigurationError("The deployment directory contains a reserved path.")
         files[relative] = path
         total_bytes += path.stat().st_size
     if not files or len(files) > MAX_FILES or total_bytes > MAX_BYTES:
@@ -276,6 +299,53 @@ class Ftps:
         with source.open("rb") as stream:
             self.client.storbinary(f"STOR {destination}", stream)
 
+    def upload_bytes(self, payload: bytes, destination: str) -> None:
+        if self.client is None:
+            raise RuntimeError("FTPS is not connected.")
+        self.client.storbinary(f"STOR {destination}", io.BytesIO(payload))
+
+    def download_optional(self, path: str) -> bytes | None:
+        if self.client is None:
+            raise RuntimeError("FTPS is not connected.")
+        payload = bytearray()
+        try:
+            self.client.retrbinary(f"RETR {path}", payload.extend)
+        except error_perm as error:
+            if str(error).startswith("550"):
+                return None
+            raise
+        if len(payload) > 1024 * 1024:
+            raise RuntimeError("Remote manifest is too large.")
+        return bytes(payload)
+
+    def ensure_directory(self, path: str) -> None:
+        if self.client is None:
+            raise RuntimeError("FTPS is not connected.")
+        current = ""
+        for part in path.split("/"):
+            current = f"{current}/{part}" if current else part
+            try:
+                self.client.mkd(current)
+            except error_perm as error:
+                if not str(error).startswith("550"):
+                    raise
+
+    def rename(self, source: str, destination: str) -> None:
+        if self.client is None:
+            raise RuntimeError("FTPS is not connected.")
+        self.client.rename(source, destination)
+
+    def rename_if_exists(self, source: str, destination: str) -> bool:
+        if self.client is None:
+            raise RuntimeError("FTPS is not connected.")
+        try:
+            self.client.rename(source, destination)
+        except error_perm as error:
+            if str(error).startswith("550"):
+                return False
+            raise
+        return True
+
     def delete(self, path: str) -> None:
         if self.client is None:
             return
@@ -314,6 +384,157 @@ def verify_web_root(ftps: Ftps, directory: Path) -> None:
         run_deployment_stage("verify-web-root", fetch_probe)
     finally:
         ftps.delete(probe_name)
+
+
+def previous_managed_files(ftps: Ftps) -> tuple[str, ...]:
+    payload = ftps.download_optional(MANIFEST_PATH)
+    if payload is None:
+        return ()
+    try:
+        manifest = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise RuntimeError("Remote manifest is invalid.") from error
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("schemaVersion") != 1
+        or manifest.get("owner") != OWNER
+        or not isinstance(manifest.get("files"), list)
+    ):
+        raise RuntimeError("Remote manifest is invalid.")
+    raw_files = manifest["files"]
+    if not all(isinstance(path, str) for path in raw_files):
+        raise RuntimeError("Remote manifest is invalid.")
+    try:
+        files = tuple(safe_release_path(path) for path in raw_files)
+    except (TypeError, ValueError) as error:
+        raise RuntimeError("Remote manifest is invalid.") from error
+    if (
+        len(files) > MAX_FILES
+        or len(files) != len(set(files))
+        or any(is_reserved_release_path(path) for path in files)
+    ):
+        raise RuntimeError("Remote manifest is invalid.")
+    return files
+
+
+def release_manifest(files: dict[str, Path], settings: Configuration) -> bytes:
+    manifest = {
+        "schemaVersion": 1,
+        "owner": OWNER,
+        "sha": settings.release_sha,
+        "files": sorted(files),
+    }
+    return (json.dumps(manifest, separators=(",", ":")) + "\n").encode("utf-8")
+
+
+def publication_order(paths: tuple[str, ...]) -> tuple[str, ...]:
+    def rank(path: str) -> tuple[int, str]:
+        if path == "index.html":
+            return (2, path)
+        if path.endswith(".html"):
+            return (1, path)
+        return (0, path)
+
+    return tuple(sorted(paths, key=rank))
+
+
+def remote_control_path(path: str, kind: str, suffix: str) -> str:
+    source = PurePosixPath(path)
+    name = f".paged-pdf-{kind}-{suffix}-{source.name}"
+    return (source.parent / name).as_posix()
+
+
+def rollback_ftps_release(
+    ftps: Ftps,
+    changes: tuple[tuple[str, str | None], ...],
+) -> None:
+    for destination, backup in reversed(changes):
+        ftps.delete(destination)
+        if backup is not None:
+            ftps.rename(backup, destination)
+
+
+def activate_ftps_release(
+    ftps: Ftps,
+    files: dict[str, Path],
+    settings: Configuration,
+) -> None:
+    previous = run_deployment_stage(
+        "read-release-manifest",
+        lambda: previous_managed_files(ftps),
+    )
+    suffix = secrets.token_hex(12)
+    release_paths = tuple(sorted(files))
+    all_targets = (*release_paths, MANIFEST_PATH)
+    staged = tuple(
+        (target, remote_control_path(target, "stage", suffix))
+        for target in all_targets
+    )
+    backups = tuple(
+        remote_control_path(target, "backup", suffix)
+        for target in (*all_targets, *previous)
+    )
+
+    print("Deployment stage: stage-release.", flush=True)
+    try:
+        directories = tuple(
+            sorted(
+                {
+                    PurePosixPath(target).parent.as_posix()
+                    for target in all_targets
+                    if PurePosixPath(target).parent.as_posix() != "."
+                }
+            )
+        )
+        for directory in directories:
+            ftps.ensure_directory(directory)
+        for target, temporary in staged:
+            if target == MANIFEST_PATH:
+                ftps.upload_bytes(release_manifest(files, settings), temporary)
+            else:
+                ftps.upload(files[target], temporary)
+    except Exception as error:
+        for _, temporary in staged:
+            ftps.delete(temporary)
+        raise DeploymentStageError("stage-release") from error
+
+    staged_by_target = dict(staged)
+    changes: tuple[tuple[str, str | None], ...] = ()
+    print("Deployment stage: activate-release.", flush=True)
+    try:
+        for target in publication_order(release_paths):
+            backup = remote_control_path(target, "backup", suffix)
+            preserved = backup if ftps.rename_if_exists(target, backup) else None
+            changes = (*changes, (target, preserved))
+            ftps.rename(staged_by_target[target], target)
+        for target in sorted(set(previous) - set(release_paths)):
+            backup = remote_control_path(target, "backup", suffix)
+            if ftps.rename_if_exists(target, backup):
+                changes = (*changes, (target, backup))
+        manifest_backup = remote_control_path(MANIFEST_PATH, "backup", suffix)
+        preserved_manifest = (
+            manifest_backup
+            if ftps.rename_if_exists(MANIFEST_PATH, manifest_backup)
+            else None
+        )
+        changes = (*changes, (MANIFEST_PATH, preserved_manifest))
+        ftps.rename(staged_by_target[MANIFEST_PATH], MANIFEST_PATH)
+    except Exception as error:
+        try:
+            rollback_ftps_release(ftps, changes)
+        except Exception as rollback_error:
+            raise DeploymentStageError("rollback-release") from rollback_error
+        raise DeploymentStageError("activate-release") from error
+    finally:
+        for _, temporary in staged:
+            ftps.delete(temporary)
+
+    print("Deployment stage: cleanup-release.", flush=True)
+    try:
+        for backup in backups:
+            ftps.delete(backup)
+    except Exception as error:
+        raise DeploymentStageError("cleanup-release") from error
 
 
 def invoke_extractor(script_name: str, token: str) -> None:
@@ -370,34 +591,14 @@ def invoke_extractor(script_name: str, token: str) -> None:
 
 def deploy(root: Path) -> None:
     settings = configuration()
-    files = release_files(root)
+    files = run_deployment_stage(
+        "prepare-release",
+        lambda: release_files(root),
+    )
     with tempfile.TemporaryDirectory(prefix="paged-pdf-deploy-") as temporary:
-        archive, script, token = run_deployment_stage(
-            "prepare-release-controls",
-            lambda: create_controls(
-                files,
-                settings,
-                Path(temporary),
-            ),
-        )
         with Ftps(settings) as ftps:
             verify_web_root(ftps, Path(temporary))
-            try:
-                run_deployment_stage(
-                    "upload-archive",
-                    lambda: ftps.upload(archive, archive.name),
-                )
-                run_deployment_stage(
-                    "upload-extractor",
-                    lambda: ftps.upload(script, script.name),
-                )
-                run_deployment_stage(
-                    "activate-release",
-                    lambda: invoke_extractor(script.name, token),
-                )
-            finally:
-                ftps.delete(archive.name)
-                ftps.delete(script.name)
+            activate_ftps_release(ftps, files, settings)
 
 
 def main(arguments: list[str]) -> int:
