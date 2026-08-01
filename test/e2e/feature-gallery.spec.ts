@@ -4,8 +4,9 @@ test("shows source, Paged.js HTML, and PDF proof stages", async ({ page }) => {
   await page.goto("/gallery.html");
 
   await expect(
-    page.getByRole("heading", { name: "Paged.js feature lab" })
+    page.getByRole("heading", { name: "paged-pdf.js feature lab" })
   ).toBeVisible();
+  await expect(page).toHaveTitle("paged-pdf.js feature lab");
   await expect(
     page.getByRole("navigation", { name: "Paged.js examples" })
   ).toBeVisible();
