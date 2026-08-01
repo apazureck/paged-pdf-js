@@ -90,7 +90,7 @@ test("deep links and synchronizes the selected example", async ({ page }) => {
   expect(coverPage.view[3]).toBeCloseTo(595.3, 0);
   expect(reportPage.view[2]).toBeCloseTo(841.9, 0);
   expect(reportPage.view[3]).toBeCloseTo(595.3, 0);
-  expect(reportRightEdge).toBeLessThanOrEqual(reportPage.view[2]);
+  expect(reportRightEdge).toBeLessThanOrEqual(reportPage.view[2]!);
   expect(reportPdfText).toContain(
     "Paged.js establishes each fragment before the PDF writer translates " +
       "the geometry into selectable text and vector shapes."
