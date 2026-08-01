@@ -63,6 +63,39 @@ test("deep links and synchronizes the selected example", async ({ page }) => {
   );
   await expect(page.getByTestId("status")).toContainText(/[1-9]\d* pages?/u);
 
+  const namedDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PDF" }).click();
+  const namedDownload = await namedDownloadPromise;
+  const namedDownloadPath = await namedDownload.path();
+  const namedPdf = await getDocument({
+    data: new Uint8Array(await readFile(namedDownloadPath!))
+  }).promise;
+  const coverPage = await namedPdf.getPage(1);
+  const reportPage = await namedPdf.getPage(2);
+  const reportTextContent = await reportPage.getTextContent();
+  const reportPdfText = reportTextContent.items
+    .map((item) => ("str" in item ? item.str : ""))
+    .join(" ")
+    .replace(/\s+/gu, " ")
+    .trim();
+  const reportRightEdge = Math.max(
+    ...reportTextContent.items.map((item) =>
+      "transform" in item && "width" in item
+        ? item.transform[4] + item.width
+        : 0
+    )
+  );
+
+  expect(coverPage.view[2]).toBeCloseTo(419.5, 0);
+  expect(coverPage.view[3]).toBeCloseTo(595.3, 0);
+  expect(reportPage.view[2]).toBeCloseTo(841.9, 0);
+  expect(reportPage.view[3]).toBeCloseTo(595.3, 0);
+  expect(reportRightEdge).toBeLessThanOrEqual(reportPage.view[2]);
+  expect(reportPdfText).toContain(
+    "Paged.js establishes each fragment before the PDF writer translates " +
+      "the geometry into selectable text and vector shapes."
+  );
+
   await page
     .getByTestId("example-link")
     .filter({ hasText: "Footnotes" })

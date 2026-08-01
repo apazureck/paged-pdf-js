@@ -226,4 +226,21 @@ describe("Paged DOM vector translation", () => {
       })
     );
   });
+
+  it("measures named-page dimensions from the Paged.js pagebox", async () => {
+    const sheet = document.createElement("div");
+    const pagebox = document.createElement("div");
+    pagebox.className = "pagedjs_pagebox";
+    sheet.append(pagebox);
+    document.body.append(sheet);
+    place(sheet, 100, 50, 816, 1056);
+    place(pagebox, 100, 50, 1122, 794);
+
+    const result = await buildVectorPage(sheet);
+
+    expect(result).toMatchObject({
+      widthCssPixels: 1122,
+      heightCssPixels: 794
+    });
+  });
 });
