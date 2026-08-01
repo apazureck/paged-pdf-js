@@ -469,6 +469,25 @@ function atomicWrite(string $root, string $relativePath, string $content): void
     }
 }
 
+function deploymentLockPath(string $deploymentId): string
+{
+    $lockDirectory = sys_get_temp_dir();
+    $lockDirectory .= DIRECTORY_SEPARATOR . 'paged-pdf-deploy-' . $deploymentId;
+    if (!is_dir($lockDirectory) && !mkdir($lockDirectory, 0700) && !is_dir($lockDirectory)) {
+        throw new RuntimeException('lock-unavailable');
+    }
+    $metadata = @lstat($lockDirectory);
+    if (
+        $metadata === false
+        || is_link($lockDirectory)
+        || (($metadata['mode'] & 0170000) !== 0040000)
+        || !chmod($lockDirectory, 0700)
+    ) {
+        throw new RuntimeException('lock-unavailable');
+    }
+    return $lockDirectory . DIRECTORY_SEPARATOR . 'deployment.lock';
+}
+
 $archiveName = '__ARCHIVE_NAME__';
 $scriptName = '__SCRIPT_NAME__';
 $stagingName = '__STAGING_NAME__';
@@ -476,7 +495,6 @@ $archivePath = __DIR__ . DIRECTORY_SEPARATOR . $archiveName;
 $scriptPath = __DIR__ . DIRECTORY_SEPARATOR . $scriptName;
 $stagingPath = __DIR__ . DIRECTORY_SEPARATOR . $stagingName;
 $backupPath = __DIR__ . DIRECTORY_SEPARATOR . $stagingName . '-backup';
-$lockPath = __DIR__ . DIRECTORY_SEPARATOR . '.paged-pdf-deploy.lock';
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     respond(['error' => 'not-found'], 404);
@@ -495,6 +513,7 @@ $response = ['error' => 'deployment-failed'];
 $status = 500;
 try {
     set_time_limit(300);
+    $lockPath = deploymentLockPath(hash('sha256', __DIR__));
     $lock = fopen($lockPath, 'c');
     if ($lock === false) {
         throw new RuntimeException('lock-unavailable');

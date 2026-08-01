@@ -340,6 +340,11 @@ describe("one-shot PHP extractor", () => {
 
     expect(template).not.toContain("@unlink($lockPath)");
     expect(template).not.toContain("@unlink($stale)");
+    expect(template).toContain("$lockDirectory = sys_get_temp_dir()");
+    expect(template).toContain("hash('sha256', __DIR__)");
+    expect(template).not.toContain(
+      "$lockPath = __DIR__ . DIRECTORY_SEPARATOR . '.paged-pdf-deploy.lock'"
+    );
     expect(template).toContain("throw new RuntimeException('lock-unavailable')");
     expect(template).toContain("throw new RuntimeException('deployment-locked')");
     expect(template).toContain("backupLiveFiles");
