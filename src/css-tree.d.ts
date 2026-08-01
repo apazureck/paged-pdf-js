@@ -6,7 +6,7 @@ declare module "css-tree" {
   }
 
   interface ParseOptions {
-    readonly context?: "declarationList" | "stylesheet";
+    readonly context?: "declarationList" | "stylesheet" | "value";
     readonly parseCustomProperty?: boolean;
   }
 

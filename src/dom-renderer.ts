@@ -1,3 +1,4 @@
+import { parse, walk } from "css-tree";
 import { parseCssColor } from "./css-color.js";
 import type {
   DrawCommand,
@@ -192,6 +193,108 @@ function transformedText(text: string, transform: string): string {
     return text.replace(/\b\p{L}/gu, (letter) => letter.toUpperCase());
   }
   return text;
+}
+
+function staticGeneratedContent(content: string): string | undefined {
+  let text = "";
+  let supported = true;
+  try {
+    const value = parse(content, { context: "value" });
+    walk(value, (node) => {
+      if (node.type === "Value") {
+        return;
+      }
+      if (node.type === "String" && node.value !== undefined) {
+        text += node.value;
+        return;
+      }
+      supported = false;
+    });
+  } catch {
+    return undefined;
+  }
+  return supported && text.length > 0 ? text : undefined;
+}
+
+function generatedTextWidth(
+  text: string,
+  style: CSSStyleDeclaration
+): number | undefined {
+  try {
+    const context = document.createElement("canvas").getContext("2d");
+    if (context === null) {
+      return undefined;
+    }
+    context.font =
+      style.font ||
+      `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const letterSpacing = Number.parseFloat(style.letterSpacing);
+    const extraSpacing = Number.isFinite(letterSpacing)
+      ? Math.max(0, Array.from(text).length - 1) * letterSpacing
+      : 0;
+    return context.measureText(text).width + extraSpacing;
+  } catch {
+    return undefined;
+  }
+}
+
+function generatedTextX(
+  bounds: Rectangle,
+  text: string,
+  style: CSSStyleDeclaration
+): number {
+  if (!["center", "right", "end"].includes(style.textAlign)) {
+    return bounds.left;
+  }
+  const width = generatedTextWidth(text, style);
+  if (width === undefined) {
+    return bounds.left;
+  }
+  return style.textAlign === "center"
+    ? bounds.left + (bounds.width - width) / 2
+    : bounds.left + bounds.width - width;
+}
+
+function generatedMarginTextCommand(
+  element: HTMLElement,
+  page: Rectangle
+): DrawCommand | undefined {
+  const style = getComputedStyle(element, "::after");
+  const content = staticGeneratedContent(style.content);
+  const bounds = relativeRectangle(element.getBoundingClientRect(), page);
+  if (
+    content === undefined ||
+    bounds === undefined ||
+    style.display === "none" ||
+    style.visibility === "hidden" ||
+    Number.parseFloat(style.opacity || "1") <= 0
+  ) {
+    return undefined;
+  }
+
+  const text = transformedText(content, style.textTransform);
+  return {
+    kind: "text",
+    text,
+    x: generatedTextX(bounds, text, style),
+    y: bounds.top,
+    fontFamily: fontFamily(style),
+    fontStyle: fontStyle(style),
+    fontSize: Number.parseFloat(style.fontSize) || 16,
+    color: parseCssColor(style.color) ?? [0, 0, 0]
+  };
+}
+
+function generatedMarginTextCommands(
+  root: HTMLElement,
+  page: Rectangle
+): readonly DrawCommand[] {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(".pagedjs_margin-content")
+  ).flatMap((element) => {
+    const command = generatedMarginTextCommand(element, page);
+    return command === undefined ? [] : [command];
+  });
 }
 
 function backgroundCommands(
@@ -471,6 +574,7 @@ export async function buildVectorPage(
       }
     }
   }
+  collector.addAll(generatedMarginTextCommands(root, page));
   await addTextCommands(root, page, collector, signal);
   addLinkCommands(root, page, collector);
   throwIfAborted(signal);
