@@ -15,9 +15,11 @@ import tempfile
 import urllib.error
 import urllib.request
 import zipfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from ftplib import FTP_TLS, error_perm
 from pathlib import Path, PurePosixPath
+from typing import TypeVar
 
 
 OWNER = "apazureck/paged-pdf-js"
@@ -27,10 +29,31 @@ COMMIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 SAFE_PART = re.compile(r"^[A-Za-z0-9._-]+$")
 MAX_FILES = 5000
 MAX_BYTES = 150 * 1024 * 1024
+Result = TypeVar("Result")
 
 
 class ConfigurationError(ValueError):
     """A deployment setting failed validation."""
+
+
+class DeploymentStageError(RuntimeError):
+    """A deployment stage failed without exposing its underlying details."""
+
+    def __init__(self, stage: str):
+        self.stage = stage
+        super().__init__(f"Deployment failed during {stage}.")
+
+
+def run_deployment_stage(
+    stage: str,
+    operation: Callable[[], Result],
+) -> Result:
+    """Run one operation while exposing only its fixed, non-secret stage."""
+    print(f"Deployment stage: {stage}.", flush=True)
+    try:
+        return operation()
+    except Exception as error:
+        raise DeploymentStageError(stage) from error
 
 
 @dataclass(frozen=True)
@@ -208,12 +231,31 @@ class Ftps:
     def __enter__(self) -> "Ftps":
         context = ssl.create_default_context()
         client = FTP_TLS(context=context, timeout=60)
-        client.connect(self.settings.host, self.settings.port)
-        client.login(self.settings.user, self.settings.password)
-        client.prot_p()
-        client.set_pasv(True)
-        if self.settings.server_directory != ".":
-            client.cwd(self.settings.server_directory)
+        try:
+            run_deployment_stage(
+                "connect",
+                lambda: client.connect(
+                    self.settings.host,
+                    self.settings.port,
+                ),
+            )
+            run_deployment_stage(
+                "authenticate",
+                lambda: client.login(
+                    self.settings.user,
+                    self.settings.password,
+                ),
+            )
+            run_deployment_stage("secure-data-channel", lambda: client.prot_p())
+            client.set_pasv(True)
+            if self.settings.server_directory != ".":
+                run_deployment_stage(
+                    "select-server-directory",
+                    lambda: client.cwd(self.settings.server_directory),
+                )
+        except Exception:
+            client.close()
+            raise
         self.client = client
         return self
 
@@ -279,9 +321,18 @@ def deploy(root: Path) -> None:
         )
         with Ftps(settings) as ftps:
             try:
-                ftps.upload(archive, archive.name)
-                ftps.upload(script, script.name)
-                invoke_extractor(script.name, token)
+                run_deployment_stage(
+                    "upload-archive",
+                    lambda: ftps.upload(archive, archive.name),
+                )
+                run_deployment_stage(
+                    "upload-extractor",
+                    lambda: ftps.upload(script, script.name),
+                )
+                run_deployment_stage(
+                    "activate-release",
+                    lambda: invoke_extractor(script.name, token),
+                )
             finally:
                 ftps.delete(archive.name)
                 ftps.delete(script.name)
@@ -301,6 +352,9 @@ def main(arguments: list[str]) -> int:
     except ConfigurationError as error:
         print(f"Deployment configuration is invalid: {error}", file=sys.stderr)
         return 2
+    except DeploymentStageError as error:
+        print(error, file=sys.stderr)
+        return 1
     except Exception:
         print("Deployment failed without exposing connection details.", file=sys.stderr)
         return 1
