@@ -221,6 +221,29 @@ describe("FTP release workflow", () => {
     expect(stdout).not.toContain("sensitive-server-detail");
   });
 
+  it("reports release preparation failures without exposing local details", async () => {
+    const source = [
+      "from pathlib import Path",
+      "from unittest.mock import patch",
+      "from scripts.deploy_ftp import Configuration, DeploymentStageError, deploy",
+      "settings = Configuration('example.com', 21, 'user', 'password', '.', 'a' * 40)",
+      "with patch('scripts.deploy_ftp.configuration', return_value=settings), \\",
+      "     patch('scripts.deploy_ftp.release_files', return_value={}), \\",
+      "     patch('scripts.deploy_ftp.create_controls', side_effect=RuntimeError('sensitive-local-detail')):",
+      "    try:",
+      "        deploy(Path('.'))",
+      "    except DeploymentStageError as error:",
+      "        print(str(error))"
+    ].join("\n");
+    const { stdout } = await execFile("python", ["-c", source]);
+
+    expect(stdout).toContain("Deployment stage: prepare-release-controls.");
+    expect(stdout).toContain(
+      "Deployment failed during prepare-release-controls."
+    );
+    expect(stdout).not.toContain("sensitive-local-detail");
+  });
+
   it("rejects unsafe remote directories before making a connection", async () => {
     await expect(
       execFile("python", [uploaderPath, "--check-config"], {

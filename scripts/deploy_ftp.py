@@ -314,10 +314,13 @@ def deploy(root: Path) -> None:
     settings = configuration()
     files = release_files(root)
     with tempfile.TemporaryDirectory(prefix="paged-pdf-deploy-") as temporary:
-        archive, script, token = create_controls(
-            files,
-            settings,
-            Path(temporary),
+        archive, script, token = run_deployment_stage(
+            "prepare-release-controls",
+            lambda: create_controls(
+                files,
+                settings,
+                Path(temporary),
+            ),
         )
         with Ftps(settings) as ftps:
             try:
