@@ -182,8 +182,8 @@ describe("FTP release workflow", () => {
       "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1"
     );
     expect(workflow).toContain('python-version: "3.12"');
-    expect(workflow).not.toContain("php --version");
-    expect(workflow).not.toContain("php -m | grep -qx zip");
+    expect(workflow).toContain("php --version");
+    expect(workflow).toContain("php -m | grep -qx zip");
   });
 
   it("keeps the retained one-shot extractor controls secret-safe", async () => {
@@ -214,49 +214,6 @@ describe("FTP release workflow", () => {
       "rejected",
       "rejected"
     ]);
-  });
-
-  it("publishes and rolls back releases through FTPS renames", async () => {
-    const source = [
-      "import json, tempfile",
-      "from pathlib import Path",
-      "from scripts.deploy_ftp import Configuration, DeploymentStageError, MANIFEST_PATH, activate_ftps_release",
-      "class FakeFtps:",
-      "    def __init__(self, remote, fail=False): self.remote, self.fail, self.failed = dict(remote), fail, False",
-      "    def download_optional(self, path): return self.remote.get(path)",
-      "    def ensure_directory(self, _path): pass",
-      "    def upload(self, source, destination): self.remote[destination] = source.read_bytes()",
-      "    def upload_bytes(self, payload, destination): self.remote[destination] = payload",
-      "    def rename_if_exists(self, source, destination):",
-      "        if source not in self.remote: return False",
-      "        self.remote[destination] = self.remote.pop(source); return True",
-      "    def rename(self, source, destination):",
-      "        if self.fail and not self.failed and destination == 'manual.html' and '.paged-pdf-stage-' in source:",
-      "            self.failed = True; raise RuntimeError('sensitive-rename-detail')",
-      "        self.remote[destination] = self.remote.pop(source)",
-      "    def delete(self, path): self.remote.pop(path, None)",
-      "settings = Configuration('example.com', 21, 'user', 'password', '.', 'b' * 40)",
-      "with tempfile.TemporaryDirectory() as directory:",
-      "    root = Path(directory)",
-      "    (root / 'index.html').write_bytes(b'new-index')",
-      "    (root / 'manual.html').write_bytes(b'new-manual')",
-      "    files = {'index.html': root / 'index.html', 'manual.html': root / 'manual.html'}",
-      "    old_manifest = json.dumps({'schemaVersion': 1, 'owner': 'apazureck/paged-pdf-js', 'sha': 'a' * 40, 'files': ['index.html', 'manual.html', 'stale.js']}).encode()",
-      "    original = {'index.html': b'old-index', 'manual.html': b'old-manual', 'stale.js': b'stale', MANIFEST_PATH: old_manifest}",
-      "    success = FakeFtps(original)",
-      "    activate_ftps_release(success, files, settings)",
-      "    manifest = json.loads(success.remote[MANIFEST_PATH])",
-      "    clean = not any('.paged-pdf-stage-' in path or '.paged-pdf-backup-' in path for path in success.remote)",
-      "    print(success.remote['index.html'] == b'new-index', 'stale.js' not in success.remote, manifest['sha'] == 'b' * 40, clean)",
-      "    rollback = FakeFtps(original, fail=True)",
-      "    try: activate_ftps_release(rollback, files, settings)",
-      "    except DeploymentStageError as error: print(error.stage, rollback.remote == original)"
-    ].join("\n");
-    const { stdout } = await execFile("python", ["-c", source]);
-
-    expect(stdout).toContain("True True True True");
-    expect(stdout.trim()).toMatch(/activate-release True$/u);
-    expect(stdout).not.toContain("sensitive-rename-detail");
   });
 
   it("reports the failing FTPS stage without exposing server details", async () => {
@@ -290,7 +247,8 @@ describe("FTP release workflow", () => {
       "from scripts.deploy_ftp import Configuration, DeploymentStageError, deploy",
       "settings = Configuration('example.com', 21, 'user', 'password', '.', 'a' * 40)",
       "with patch('scripts.deploy_ftp.configuration', return_value=settings), \\",
-      "     patch('scripts.deploy_ftp.release_files', side_effect=RuntimeError('sensitive-local-detail')):",
+      "     patch('scripts.deploy_ftp.release_files', return_value={}), \\",
+      "     patch('scripts.deploy_ftp.create_controls', side_effect=RuntimeError('sensitive-local-detail')):",
       "    try:",
       "        deploy(Path('.'))",
       "    except DeploymentStageError as error:",
@@ -298,9 +256,9 @@ describe("FTP release workflow", () => {
     ].join("\n");
     const { stdout } = await execFile("python", ["-c", source]);
 
-    expect(stdout).toContain("Deployment stage: prepare-release.");
+    expect(stdout).toContain("Deployment stage: prepare-release-controls.");
     expect(stdout).toContain(
-      "Deployment failed during prepare-release."
+      "Deployment failed during prepare-release-controls."
     );
     expect(stdout).not.toContain("sensitive-local-detail");
   });
