@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 test("shows source, Paged.js HTML, and PDF proof stages", async ({ page }) => {
   await page.goto("/gallery.html");
@@ -140,6 +142,23 @@ test("changes running chapter headers and restarts page numbering", async ({
       2
     );
   }
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PDF" }).click();
+  const download = await downloadPromise;
+  const downloadPath = await download.path();
+  const bytes = new Uint8Array(await readFile(downloadPath!));
+  const pdf = await getDocument({ data: bytes }).promise;
+  const firstChapter = await pdf.getPage(3);
+  const textContent = await firstChapter.getTextContent();
+  const pdfText = textContent.items
+    .map((item) => ("str" in item ? item.str : ""))
+    .join(" ")
+    .replace(/\s+/gu, " ")
+    .trim();
+
+  expect(pdfText).toContain("Chapter I: Down the Rabbit-Hole");
+  expect(pdfText).not.toMatch(/Chapter\s+Chapter/u);
 });
 
 test("stacks the proof stages without horizontal overflow on mobile", async ({

@@ -139,4 +139,43 @@ describe("Paged DOM vector translation", () => {
     );
     expect(page.outerHTML).toBe(before);
   });
+
+  it("does not duplicate words split across client rectangles", async () => {
+    const page = document.createElement("div");
+    const heading = document.createElement("h1");
+    heading.textContent = "Chapter I:";
+    page.append(heading);
+    document.body.append(page);
+    place(page, 100, 50, 816, 1056);
+    place(heading, 196, 146, 160, 24);
+
+    vi.spyOn(document, "createRange").mockImplementation(() => {
+      let start = 0;
+      let end = 0;
+      return {
+        setStart: vi.fn((_node: Node, offset: number) => {
+          start = offset;
+        }),
+        setEnd: vi.fn((_node: Node, offset: number) => {
+          end = offset;
+        }),
+        getClientRects: () =>
+          start === 0 && end === 8
+            ? [
+                rectangle(196, 146, 10, 20),
+                rectangle(206, 146, 70, 20)
+              ]
+            : [rectangle(196 + start * 10, 146, (end - start) * 10, 20)],
+        detach: vi.fn()
+      } as unknown as Range;
+    });
+
+    const result = await buildVectorPage(page);
+    const text = result.commands
+      .filter((command) => command.kind === "text")
+      .map((command) => command.text)
+      .join("");
+
+    expect(text).toBe("Chapter I:");
+  });
 });
