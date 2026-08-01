@@ -337,7 +337,8 @@ async function requestPagedPreview(
         token,
         html: example.html,
         css: example.css,
-        title: example.title
+        title: example.title,
+        renderMode: example.renderMode
       },
       window.location.origin
     );

@@ -9,7 +9,7 @@ import { normalizeOptions } from "../../src/options.js";
 
 describe("option normalization", () => {
   it("applies safe defaults", () => {
-    expect(normalizeOptions()).toEqual({ metadata: {} });
+    expect(normalizeOptions()).toEqual({ metadata: {}, renderMode: "vector" });
   });
 
   it("preserves valid immutable options", () => {
@@ -21,12 +21,14 @@ describe("option normalization", () => {
       normalizeOptions({
         metadata,
         signal: controller.signal,
-        onProgress
+        onProgress,
+        renderMode: "hybrid"
       })
     ).toEqual({
       metadata,
       signal: controller.signal,
-      onProgress
+      onProgress,
+      renderMode: "hybrid"
     });
   });
 });

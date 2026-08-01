@@ -115,6 +115,19 @@ async function drawCommand(
     );
     return;
   }
+  if (command.kind === "roundedFill") {
+    setColor(document.setFillColor.bind(document), command.color);
+    document.roundedRect(
+      cssPixelsToPoints(command.x),
+      cssPixelsToPoints(command.y),
+      cssPixelsToPoints(command.width),
+      cssPixelsToPoints(command.height),
+      cssPixelsToPoints(command.radiusX),
+      cssPixelsToPoints(command.radiusY),
+      "F"
+    );
+    return;
+  }
   if (command.kind === "text") {
     document.setFont(command.fontFamily, command.fontStyle);
     document.setFontSize(cssPixelsToPoints(command.fontSize));
@@ -125,7 +138,8 @@ async function drawCommand(
       cssPixelsToPoints(command.y),
       {
         baseline: "top",
-        charSpace: cssLengthToPoints(command.letterSpacing)
+        charSpace: cssLengthToPoints(command.letterSpacing),
+        renderingMode: command.opacity === 0 ? "invisible" : undefined
       }
     );
     return;

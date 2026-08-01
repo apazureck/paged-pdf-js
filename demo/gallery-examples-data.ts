@@ -306,18 +306,19 @@ code {
   },
   {
     id: "difference-lab",
+    renderMode: "hybrid",
     group: "Known differences",
     title: "Visual effects difference lab",
     shortTitle: "Difference lab",
     summary: "A stress sheet exposes unsupported CSS instead of hiding it.",
-    support: "pagedjs-only",
+    support: "match",
     features: ["gradients", "shadows", "radius", "transforms", "SVG"],
     compareNotes: [
-      "Gradients, shadows, transforms, SVG, radius, and dashed borders are outside v0.1.",
-      "This sheet shows how the bounded primitive renderer degrades."
+      "Hybrid mode rasterizes the visual page while preserving selectable text and links.",
+      "Use vector mode when small files and native PDF drawing are more important."
     ],
-    html: `<article><p class="eyebrow">Known differences / 10</p><h1>Effects stress sheet</h1><div class="effects"><div class="gradient">Gradient</div><div class="shadow">Shadow</div><div class="rounded">Rounded</div><div class="dashed">Dashed</div><div class="rotated">Rotated</div><div class="faded">Opacity</div></div><svg viewBox="0 0 160 60" aria-label="Inline SVG wave"><path d="M0 35 Q40 5 80 35 T160 35" fill="none" stroke="#17748b" stroke-width="8"/></svg></article>`,
-    css: `@page { size: A5; margin: 16mm; } ${baseCss} .effects { display: grid; margin-top: 8mm; grid-template-columns: 1fr 1fr; gap: 6mm; } .effects div { display: grid; min-height: 28mm; place-items: center; font: 700 11pt Arial; } .gradient { background: linear-gradient(135deg, #17748b, #f0ae4c); color: white; } .shadow { box-shadow: 0 4mm 8mm #123f5066; } .rounded { border-radius: 12mm; background: #e8f3f4; } .dashed { border: 2mm dashed #dd704f; } .rotated { transform: rotate(-5deg); background: #123f50; color: white; } .faded { opacity: .35; background: #dd704f; } svg { width: 100%; margin-top: 10mm; }`
+    html: `<article><p class="eyebrow">Known differences / 10</p><h1>Effects stress sheet</h1><div class="effects"><div class="gradient">Gradient</div><div class="shadow">Shadow</div><div class="rounded">Rounded</div><div class="dashed">Dashed</div><div class="rotated">Rotated</div><div class="faded"><span>Opacity</span></div></div><svg viewBox="0 0 160 60" aria-label="Inline SVG wave"><path d="M0 35 Q40 5 80 35 T160 35" fill="none" stroke="#17748b" stroke-width="8"/></svg></article>`,
+    css: `@page { size: A5; margin: 16mm; } ${baseCss} .effects { display: grid; margin-top: 8mm; grid-template-columns: 1fr 1fr; gap: 6mm; } .effects div { display: grid; min-height: 28mm; place-items: center; font: 700 11pt Arial; } .gradient { background: linear-gradient(135deg, #17748b, #f0ae4c); color: white; } .shadow { box-shadow: 0 4mm 8mm #123f5066; } .rounded { border-radius: 12mm; background: #e8f3f4; } .dashed { border: 2mm dashed #dd704f; } .rotated { transform: rotate(-5deg); background: #123f50; color: white; } .faded { position: relative; overflow: visible; opacity: .45; background: #dd704f; } .faded::before { content: ""; position: absolute; z-index: 0; width: 65%; height: 65%; transform: rotate(12deg); background: #17748b; } .faded span { position: relative; z-index: 1; padding: 1.5mm 2.5mm; background: #fff; color: #123f50; } svg { width: 100%; margin-top: 10mm; }`
   }
 ] as const satisfies readonly GalleryExample[];
 

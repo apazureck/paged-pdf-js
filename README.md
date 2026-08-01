@@ -13,9 +13,9 @@ Convert HTML into paged, vector-oriented PDFs entirely in the browser.
 layout, reads the geometry of the resulting page DOM, and writes PDF drawing
 primitives with [jsPDF](https://github.com/parallax/jsPDF).
 
-The authoring path does not take page screenshots, use html2canvas, or call
-`jsPDF.html()`. Text is written as PDF text and remains selectable and
-searchable.
+The default vector path does not take page screenshots or use the jsPDF HTML renderer.
+Text remains selectable and searchable. Optional hybrid and raster modes use
+html2canvas for browser-accurate visual effects.
 
 [Try the playground](https://paged-pdf-js.pazureck.de) |
 [Read the developer manual](https://paged-pdf-js.pazureck.de/manual.html) |
@@ -93,6 +93,7 @@ The current deployed browser bundles are available directly:
 
 - [Standalone UMD bundle](https://paged-pdf-js.pazureck.de/downloads/paged-pdf.min.js)
 - [ES module bundle](https://paged-pdf-js.pazureck.de/downloads/paged-pdf.js)
+- [GitHub Raw download](https://raw.githubusercontent.com/apazureck/paged-pdf-js/main/browser/paged-pdf.min.js)
 - [Complete download and setup guide](https://paged-pdf-js.pazureck.de/manual.html#browser-bundles)
 
 The standalone build exposes `window.PagedPdf`:
@@ -108,8 +109,21 @@ The standalone build exposes `window.PagedPdf`:
 </script>
 ```
 
-Pin an exact npm or UNPKG version in production. Files under the custom
-domain's stable `/downloads/` paths represent the current deployed build.
+To use the committed GitHub bundle directly in a browser, load it through
+GitHub's jsDelivr endpoint:
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/apazureck/paged-pdf-js@main/browser/paged-pdf.min.js"></script>
+```
+
+GitHub Raw is suitable for downloading the minified file, but GitHub serves
+raw JavaScript as `text/plain` with MIME sniffing disabled. Browsers therefore
+reject the Raw URL in a `<script>` element. jsDelivr serves the same GitHub file
+with an executable JavaScript content type.
+
+Pin an exact npm version, Git tag, or commit SHA in production. Files under the
+custom domain's stable `/downloads/` paths represent the current deployed
+build.
 
 ## API
 
@@ -143,6 +157,7 @@ interface HtmlToPdfOptions {
   readonly styleText?: string;
   readonly baseUrl?: string;
   readonly allowedResourceOrigins?: readonly string[];
+  readonly renderMode?: "vector" | "hybrid" | "raster";
   readonly metadata?: {
     readonly title?: string;
     readonly author?: string;
@@ -157,6 +172,13 @@ interface HtmlToPdfOptions {
   }) => void;
 }
 ```
+
+renderMode defaults to "vector". Use "hybrid" for browser-accurate visual
+effects such as shadows, gradients, transforms, SVG, and complex border radii:
+each page is rasterized while invisible PDF text and link annotations remain
+available. Use "raster" when visual fidelity matters more than selectable
+text. Raster modes produce larger files and text is not rendered as native
+visible PDF glyphs.
 
 Resource URLs are same-origin by default. Add trusted origins explicitly for
 PNG/JPEG `<img src>` resources:

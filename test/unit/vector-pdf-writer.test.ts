@@ -64,6 +64,25 @@ describe("vector PDF writer", () => {
     expect(onPageWritten).toHaveBeenCalledWith(1);
   });
 
+  it("writes rounded vector fills", async () => {
+    const bytes = await writeVectorPdf([{
+      widthCssPixels: 200,
+      heightCssPixels: 200,
+      commands: [{
+        kind: "roundedFill",
+        x: 20,
+        y: 20,
+        width: 100,
+        height: 60,
+        radiusX: 12,
+        radiusY: 12,
+        color: [10, 20, 30]
+      }]
+    }]);
+
+    expect(bytes.byteLength).toBeGreaterThan(500);
+  });
+
   it("preserves CSS letter spacing in selectable PDF text", async () => {
     const pages: readonly VectorPage[] = [
       {

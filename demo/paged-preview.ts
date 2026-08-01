@@ -1,5 +1,5 @@
 import { Previewer } from "pagedjs";
-import { pagedDomToPdf } from "../src/index.js";
+import { pagedDomToPdf, type RenderMode } from "../src/index.js";
 import {
   materializeFootnoteMarkers,
   prepareFootnoteLabels
@@ -14,6 +14,7 @@ interface RenderMessage {
   readonly html: string;
   readonly css: string;
   readonly title: string;
+  readonly renderMode?: RenderMode;
 }
 
 interface ScaleMessage {
@@ -154,6 +155,7 @@ async function render(message: RenderMessage): Promise<void> {
     const htmlPageCount = host.querySelectorAll(".pagedjs_page").length;
     naturalPageWidth = synchronizePagedPageDimensions(host);
     const result = await pagedDomToPdf(host, {
+      renderMode: message.renderMode,
       signal: controller.signal,
       metadata: {
         title: `${message.title} | paged-pdf.js feature lab`,

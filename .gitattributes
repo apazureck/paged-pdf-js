@@ -2,3 +2,5 @@
 
 *.png binary
 *.webm binary
+
+browser/paged-pdf.min.js linguist-generated=true -whitespace

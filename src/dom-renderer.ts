@@ -305,22 +305,60 @@ function backgroundCommands(
   element: Element,
   page: Rectangle
 ): readonly DrawCommand[] {
-  const color = parseCssColor(getComputedStyle(element).backgroundColor);
+  const style = getComputedStyle(element);
+  const color = parseCssColor(style.backgroundColor);
   if (color === undefined) {
     return [];
   }
-  return clientRectangles(element).flatMap((rectangle) => {
+  const cornerRadii = [
+    style.borderTopLeftRadius || style.borderRadius,
+    style.borderTopRightRadius || style.borderRadius,
+    style.borderBottomRightRadius || style.borderRadius,
+    style.borderBottomLeftRadius || style.borderRadius
+  ].map((value) => {
+    const [horizontal = "", vertical = horizontal] = value.trim().split(/\s+/u);
+    return {
+      x: Number.parseFloat(horizontal),
+      y: Number.parseFloat(vertical)
+    };
+  });
+  const firstRadius = cornerRadii[0];
+  const hasUniformRadius =
+    firstRadius !== undefined &&
+    firstRadius.x > 0 &&
+    firstRadius.y > 0 &&
+    cornerRadii.every(
+      (radius) =>
+        Number.isFinite(radius.x) &&
+        Number.isFinite(radius.y) &&
+        radius.x === firstRadius.x &&
+        radius.y === firstRadius.y
+    );
+  return clientRectangles(element).flatMap<DrawCommand>((rectangle) => {
     const relative = relativeRectangle(rectangle, page);
-    return relative === undefined
-      ? []
-      : [{
-          kind: "fill" as const,
-          x: relative.left,
-          y: relative.top,
-          width: relative.width,
-          height: relative.height,
-          color
-        }];
+    if (relative === undefined) {
+      return [];
+    }
+    if (hasUniformRadius) {
+      return [{
+        kind: "roundedFill",
+        x: relative.left,
+        y: relative.top,
+        width: relative.width,
+        height: relative.height,
+        radiusX: Math.min(firstRadius.x, relative.width / 2),
+        radiusY: Math.min(firstRadius.y, relative.height / 2),
+        color
+      }];
+    }
+    return [{
+      kind: "fill",
+      x: relative.left,
+      y: relative.top,
+      width: relative.width,
+      height: relative.height,
+      color
+    }];
   });
 }
 

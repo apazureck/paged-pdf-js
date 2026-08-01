@@ -1,5 +1,5 @@
 import { waitForAssets } from "./assets.js";
-import type { VectorPage } from "./display-list.js";
+import type { DrawCommand, VectorPage } from "./display-list.js";
 import { buildVectorPage } from "./dom-renderer.js";
 import {
   PagedPdfError,
@@ -14,6 +14,7 @@ import {
 import { normalizeOptions, type NormalizedOptions } from "./options.js";
 import { collectPagedSheets } from "./paged-dom.js";
 import { writeVectorPdf } from "./pdf-writer.js";
+import { buildRasterPage } from "./raster-renderer.js";
 import { prepareHtmlInput, prepareStyleText } from "./sanitize.js";
 import type {
   HtmlToPdfOptions,
@@ -87,6 +88,31 @@ function createResult(bytes: Uint8Array, pageCount: number): PdfResult {
   };
 }
 
+async function buildPageDisplayList(
+  page: HTMLElement,
+  normalized: NormalizedOptions
+): Promise<VectorPage> {
+  if (normalized.renderMode === "vector") {
+    return await buildVectorPage(page, normalized.signal);
+  }
+  if (normalized.renderMode === "raster") {
+    return await buildRasterPage(page, normalized.signal);
+  }
+
+  const [rasterPage, vectorPage] = await Promise.all([
+    buildRasterPage(page, normalized.signal),
+    buildVectorPage(page, normalized.signal)
+  ]);
+  const semanticCommands = vectorPage.commands.flatMap<DrawCommand>((command) => {
+    if (command.kind === "link") return [command];
+    if (command.kind === "text") return [{ ...command, opacity: 0 }];
+    return [];
+  });
+  return {
+    ...rasterPage,
+    commands: Object.freeze([...rasterPage.commands, ...semanticCommands])
+  };
+}
 async function convertPagedDom(
   pagedRoot: ParentNode,
   normalized: NormalizedOptions
@@ -112,7 +138,7 @@ async function convertPagedDom(
       totalPages: pages.length
     });
     try {
-      const vectorPage = await buildVectorPage(page, normalized.signal);
+      const vectorPage = await buildPageDisplayList(page, normalized);
       totalCommands += vectorPage.commands.length;
       if (totalCommands > MAX_DOCUMENT_COMMANDS) {
         throw new PagedPdfError(

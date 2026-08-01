@@ -100,6 +100,30 @@ describe("Paged DOM vector translation", () => {
     ).toHaveLength(4);
   });
 
+  it("turns uniform rounded backgrounds into vector commands", async () => {
+    const page = document.createElement("div");
+    const card = document.createElement("div");
+    card.style.backgroundColor = "rgb(232, 243, 244)";
+    card.style.borderRadius = "24px";
+    page.append(card);
+    document.body.append(page);
+    place(page, 100, 50, 800, 1000);
+    place(card, 140, 90, 200, 100);
+
+    const result = await buildVectorPage(page);
+
+    expect(result.commands).toContainEqual({
+      kind: "roundedFill",
+      x: 40,
+      y: 40,
+      width: 200,
+      height: 100,
+      radiusX: 24,
+      radiusY: 24,
+      color: [232, 243, 244]
+    });
+  });
+
   it("turns solid multi-column rules into vector fills", async () => {
     const page = document.createElement("div");
     const columns = document.createElement("div");

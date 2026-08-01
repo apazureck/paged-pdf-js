@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  buildRasterPage: vi.fn(),
   buildVectorPage: vi.fn(),
   destroy: vi.fn(),
   preview: vi.fn(),
@@ -13,6 +14,9 @@ vi.mock("../../src/assets.js", () => ({
 }));
 vi.mock("../../src/dom-renderer.js", () => ({
   buildVectorPage: mocks.buildVectorPage
+}));
+vi.mock("../../src/raster-renderer.js", () => ({
+  buildRasterPage: mocks.buildRasterPage
 }));
 vi.mock("../../src/pdf-writer.js", () => ({
   writeVectorPdf: mocks.writeVectorPdf
@@ -51,6 +55,17 @@ function appendPage(root: HTMLElement): void {
 describe("conversion orchestration", () => {
   beforeEach(() => {
     document.body.replaceChildren();
+    mocks.buildRasterPage.mockReset().mockResolvedValue({
+      ...VECTOR_PAGE,
+      commands: [{
+        kind: "image",
+        source: "data:image/png;base64,AA==",
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 200
+      }]
+    });
     mocks.buildVectorPage.mockReset().mockReturnValue(VECTOR_PAGE);
     mocks.destroy.mockReset();
     mocks.preview.mockReset();
@@ -107,6 +122,70 @@ describe("conversion orchestration", () => {
       page: 2,
       totalPages: 2
     });
+  });
+
+  it("keeps vector rendering as the default", async () => {
+    const root = document.createElement("main");
+    appendPage(root);
+
+    await pagedDomToPdf(root);
+
+    expect(mocks.buildVectorPage).toHaveBeenCalledOnce();
+    expect(mocks.buildRasterPage).not.toHaveBeenCalled();
+  });
+
+  it("uses a page image in raster mode", async () => {
+    const root = document.createElement("main");
+    appendPage(root);
+
+    await pagedDomToPdf(root, { renderMode: "raster" });
+
+    expect(mocks.buildRasterPage).toHaveBeenCalledOnce();
+    expect(mocks.buildVectorPage).not.toHaveBeenCalled();
+  });
+
+  it("keeps searchable text and links over the image in hybrid mode", async () => {
+    const root = document.createElement("main");
+    appendPage(root);
+    mocks.buildVectorPage.mockResolvedValue({
+      ...VECTOR_PAGE,
+      commands: [
+        {
+          kind: "fill",
+          x: 0,
+          y: 0,
+          width: 10,
+          height: 10,
+          color: [0, 0, 0]
+        },
+        {
+          kind: "text",
+          text: "Searchable",
+          x: 1,
+          y: 1,
+          fontFamily: "helvetica",
+          fontStyle: "normal",
+          fontSize: 12,
+          letterSpacing: 0,
+          color: [0, 0, 0]
+        },
+        {
+          kind: "link",
+          x: 1,
+          y: 1,
+          width: 10,
+          height: 10,
+          url: "https://example.com/"
+        }
+      ]
+    });
+
+    await pagedDomToPdf(root, { renderMode: "hybrid" });
+
+    const writtenPage = mocks.writeVectorPdf.mock.calls[0]?.[0][0];
+    expect(writtenPage.commands.map((command: { kind: string }) => command.kind))
+      .toEqual(["image", "text", "link"]);
+    expect(writtenPage.commands[1]).toMatchObject({ opacity: 0 });
   });
 
   it("paginates sanitized HTML and cleans temporary styles", async () => {

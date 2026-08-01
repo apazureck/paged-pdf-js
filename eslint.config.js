@@ -5,6 +5,7 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   {
     ignores: [
+      "browser/**",
       "coverage/**",
       "demo-dist/**",
       "demo/public/downloads/**",
