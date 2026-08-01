@@ -19,6 +19,7 @@ export interface TextCommand {
   readonly fontFamily: PdfFontFamily;
   readonly fontStyle: PdfFontStyle;
   readonly fontSize: number;
+  readonly letterSpacing: number;
   readonly color: PdfColor;
 }
 

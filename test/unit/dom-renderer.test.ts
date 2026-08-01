@@ -100,11 +100,66 @@ describe("Paged DOM vector translation", () => {
     ).toHaveLength(4);
   });
 
+  it("turns solid multi-column rules into vector fills", async () => {
+    const page = document.createElement("div");
+    const columns = document.createElement("div");
+    columns.style.columnCount = "2";
+    columns.style.columnGap = "40px";
+    columns.style.columnRuleStyle = "solid";
+    columns.style.columnRuleWidth = "2px";
+    columns.style.columnRuleColor = "rgb(182, 198, 202)";
+    columns.style.padding = "10px";
+    columns.style.borderWidth = "4px";
+    columns.style.borderStyle = "solid";
+    columns.style.borderColor = "transparent";
+    page.append(columns);
+    document.body.append(page);
+    place(page, 100, 50, 800, 1000);
+    place(columns, 140, 90, 600, 400);
+
+    const result = await buildVectorPage(page);
+
+    expect(result.commands).toContainEqual({
+      kind: "fill",
+      x: 339,
+      y: 54,
+      width: 2,
+      height: 372,
+      color: [182, 198, 202]
+    });
+  });
+
+  it("derives column rules from a declared column width", async () => {
+    const page = document.createElement("div");
+    const columns = document.createElement("div");
+    columns.style.columnCount = "auto";
+    columns.style.columnWidth = "200px";
+    columns.style.columnGap = "40px";
+    columns.style.columnRuleStyle = "solid";
+    columns.style.columnRuleWidth = "2px";
+    columns.style.columnRuleColor = "rgb(182, 198, 202)";
+    page.append(columns);
+    document.body.append(page);
+    place(page, 100, 50, 800, 1000);
+    place(columns, 140, 90, 600, 400);
+
+    const result = await buildVectorPage(page);
+    const rules = result.commands.filter(
+      (command) =>
+        command.kind === "fill" && command.color[0] === 182
+    );
+
+    expect(rules).toEqual([
+      expect.objectContaining({ x: 339, y: 40, width: 2, height: 400 })
+    ]);
+  });
+
   it("turns laid-out text fragments into selectable text commands", async () => {
     const page = document.createElement("div");
     const paragraph = document.createElement("p");
     paragraph.style.color = "rgb(200, 10, 20)";
     paragraph.style.font = "700 16px Arial";
+    paragraph.style.letterSpacing = "1.5px";
     paragraph.textContent = "Vector text";
     page.append(paragraph);
     document.body.append(page);
@@ -133,6 +188,7 @@ describe("Paged DOM vector translation", () => {
           fontFamily: "helvetica",
           fontStyle: "bold",
           fontSize: 16,
+          letterSpacing: 1.5,
           color: [200, 10, 20]
         })
       ])

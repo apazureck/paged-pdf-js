@@ -167,17 +167,23 @@ function clearPdf(): void {
 
 function sourceDocument(example: GalleryExample): string {
   const safeCss = example.css.replaceAll("</style", "<\\/style");
+  const resourceOrigin = window.location.origin;
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8">
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'"
+      content="default-src 'none'; style-src 'unsafe-inline'; img-src data: blob: ${resourceOrigin}; base-uri 'none'; form-action 'none'"
     >
     <style>${safeCss}</style>
     <style>
-      html { min-height: 100%; padding: 1px; background: #dbe3e4; }
+      html {
+        min-height: 100%;
+        padding: 1px;
+        overflow-x: hidden;
+        background: #dbe3e4;
+      }
       body {
         width: min(210mm, calc(100% - 24px)) !important;
         min-height: calc(100vh - 48px);
@@ -185,6 +191,13 @@ function sourceDocument(example: GalleryExample): string {
         padding: 16mm !important;
         background: white;
         box-shadow: 0 12px 32px rgb(24 47 57 / 18%);
+      }
+      body > *,
+      body > * > * { max-width: 100% !important; }
+      .cover-page { height: auto !important; }
+      img {
+        max-width: 100% !important;
+        height: auto !important;
       }
     </style>
   </head>

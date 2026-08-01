@@ -7,7 +7,7 @@ import type {
   VectorPage
 } from "./display-list.js";
 import { PagedPdfError, toPagedPdfError, throwIfAborted } from "./errors.js";
-import { cssPixelsToPoints } from "./geometry.js";
+import { cssLengthToPoints, cssPixelsToPoints } from "./geometry.js";
 import {
   loadImageResource,
   type LoadedImageResource
@@ -123,7 +123,10 @@ async function drawCommand(
       command.text,
       cssPixelsToPoints(command.x),
       cssPixelsToPoints(command.y),
-      { baseline: "top" }
+      {
+        baseline: "top",
+        charSpace: cssLengthToPoints(command.letterSpacing)
+      }
     );
     return;
   }

@@ -1,0 +1,45 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1280"
+  height="420"
+  viewBox="0 0 1280 420"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Paged PDF JS — HTML and CSS to PDF objects</title>
+  <desc id="description">
+    A minimal code-to-document symbol and explicit wording describe conversion
+    from HTML and CSS into PDF objects without canvas or screenshots.
+  </desc>
+
+  <g transform="translate(46 62)">
+    <rect x="0" y="0" width="344" height="296" rx="50" fill="#FDFBF7" stroke="#08303C" stroke-width="16"/>
+    <rect x="28" y="26" width="138" height="42" rx="21" fill="#F5A623"/>
+    <text x="97" y="56" fill="#08303C" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="800" text-anchor="middle">HTML + CSS</text>
+
+    <path d="M94 116l-32 29 32 29M160 116l32 29-32 29M146 96l-28 98" fill="none" stroke="#08303C" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+    <path d="M179 226C217 174 261 174 300 217" fill="none" stroke="#2BB7CF" stroke-linecap="round" stroke-width="14"/>
+    <path d="M285 200l33 26-39 9z" fill="#2BB7CF"/>
+    <path d="M179 226l29-46M300 217l-18-49" stroke="#08303C" stroke-width="4"/>
+    <g fill="#FDFBF7" stroke="#08303C" stroke-width="5">
+      <circle cx="179" cy="226" r="10"/>
+      <circle cx="208" cy="180" r="8"/>
+      <circle cx="282" cy="168" r="8"/>
+      <circle cx="300" cy="217" r="10"/>
+    </g>
+    <rect x="222" y="78" width="92" height="66" rx="18" fill="#E75252"/>
+    <text x="268" y="124" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="800" text-anchor="middle">PDF</text>
+  </g>
+
+  <text x="444" y="142" fill="#08303C" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="800" letter-spacing="-2">paged-pdf-js</text>
+  <text x="448" y="218" fill="#2BB7CF" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="800" letter-spacing="1">HTML + CSS → PDF OBJECTS</text>
+
+  <g transform="translate(448 257)">
+    <rect x="0" y="0" width="278" height="54" rx="27" fill="#08303C"/>
+    <text x="139" y="36" fill="#FDFBF7" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" text-anchor="middle">SELECTABLE TEXT</text>
+    <rect x="294" y="0" width="278" height="54" rx="27" fill="#2BB7CF"/>
+    <text x="433" y="36" fill="#08303C" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" text-anchor="middle">VECTOR PATHS</text>
+    <rect x="588" y="0" width="188" height="54" rx="27" fill="#E75252"/>
+    <text x="682" y="36" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="700" text-anchor="middle">NO CANVAS</text>
+  </g>
+</svg>

@@ -22,6 +22,10 @@ const example: GalleryExample = {
 };
 
 describe("gallery playground settings", () => {
+  it("uses an 18pt heading default", () => {
+    expect(defaultPlaygroundSettings.headingSizePt).toBe(18);
+  });
+
   it("adds deterministic print overrides without mutating the example", () => {
     const settings = {
       ...defaultPlaygroundSettings,
@@ -43,6 +47,25 @@ describe("gallery playground settings", () => {
     expect(effective.css).toContain("margin-bottom: 6mm !important");
     expect(effective.css).toContain("font-size: 34pt !important");
     expect(effective.css).toContain("@page report");
+  });
+
+  it("preserves explicitly locked page margins", () => {
+    const effective = applyPlaygroundSettings(
+      {
+        ...example,
+        css: [
+          "@page cover { size: A5; margin: 0; }",
+          "@page report { size: A5; margin: 12mm; }"
+        ].join(" "),
+        fixedPageMarginSelectors: ["cover"]
+      },
+      { ...defaultPlaygroundSettings, marginMm: 28 }
+    );
+    const overrides = effective.css.split("/* Live playground overrides */")[1];
+
+    expect(overrides).not.toContain("@page cover");
+    expect(overrides).toContain("@page report");
+    expect(overrides).toContain("margin: 28mm !important");
   });
 
   it("round-trips settings through bounded URL parameters", () => {

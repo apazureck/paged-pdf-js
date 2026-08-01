@@ -28,7 +28,7 @@ export const defaultPlaygroundSettings: PlaygroundSettings = {
   fontSizePt: 11,
   lineHeight: 1.5,
   paragraphGapMm: 4,
-  headingSizePt: 25
+  headingSizePt: 18
 };
 
 const definitions: {
@@ -117,10 +117,12 @@ function pageSelectors(sourceCss: string): readonly string[] {
 
 function buildPlaygroundCss(
   sourceCss: string,
-  settings: PlaygroundSettings
+  settings: PlaygroundSettings,
+  fixedPageMarginSelectors: readonly string[]
 ): string {
   const margin = formatNumber(settings.marginMm);
   const pageRules = pageSelectors(sourceCss)
+    .filter((selector) => !fixedPageMarginSelectors.includes(selector))
     .map(
       (selector) => `@page${selector === "" ? "" : ` ${selector}`} {
   margin: ${margin}mm !important;
@@ -148,6 +150,10 @@ export function applyPlaygroundSettings(
 ): GalleryExample {
   return {
     ...example,
-    css: `${example.css.trim()}\n\n${buildPlaygroundCss(example.css, settings)}`
+    css: `${example.css.trim()}\n\n${buildPlaygroundCss(
+      example.css,
+      settings,
+      example.fixedPageMarginSelectors ?? []
+    )}`
   };
 }

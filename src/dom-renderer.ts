@@ -284,6 +284,7 @@ function generatedMarginTextCommand(
     fontFamily: fontFamily(style),
     fontStyle: fontStyle(style),
     fontSize: Number.parseFloat(style.fontSize) || 16,
+    letterSpacing: Number.parseFloat(style.letterSpacing) || 0,
     color: parseCssColor(style.color) ?? [0, 0, 0]
   };
 }
@@ -385,6 +386,88 @@ function borderCommands(
           color: side.color
         }]
   );
+}
+
+function columnRuleCommands(
+  element: Element,
+  page: Rectangle
+): readonly DrawCommand[] {
+  const style = getComputedStyle(element);
+  const ruleWidth = Number.parseFloat(style.columnRuleWidth);
+  const ruleColor = parseCssColor(style.columnRuleColor);
+  if (
+    style.columnRuleStyle !== "solid" ||
+    !Number.isFinite(ruleWidth) ||
+    ruleWidth <= 0 ||
+    ruleColor === undefined
+  ) {
+    return [];
+  }
+
+  const bounds = element.getBoundingClientRect();
+  const leftInset =
+    (Number.parseFloat(style.borderLeftWidth) || 0) +
+    (Number.parseFloat(style.paddingLeft) || 0);
+  const rightInset =
+    (Number.parseFloat(style.borderRightWidth) || 0) +
+    (Number.parseFloat(style.paddingRight) || 0);
+  const topInset =
+    (Number.parseFloat(style.borderTopWidth) || 0) +
+    (Number.parseFloat(style.paddingTop) || 0);
+  const bottomInset =
+    (Number.parseFloat(style.borderBottomWidth) || 0) +
+    (Number.parseFloat(style.paddingBottom) || 0);
+  const contentWidth = bounds.width - leftInset - rightInset;
+  const contentHeight = bounds.height - topInset - bottomInset;
+  if (contentWidth <= 0 || contentHeight <= 0) {
+    return [];
+  }
+
+  const parsedGap = Number.parseFloat(style.columnGap);
+  const gap = Number.isFinite(parsedGap)
+    ? parsedGap
+    : Number.parseFloat(style.fontSize) || 16;
+  const declaredCount = Number.parseInt(style.columnCount, 10);
+  const declaredWidth = Number.parseFloat(style.columnWidth);
+  const widthBasedCount = Number.isFinite(declaredWidth) && declaredWidth > 0
+    ? Math.max(1, Math.floor((contentWidth + gap) / (declaredWidth + gap)))
+    : undefined;
+  const columnCount = Number.isFinite(declaredCount) && declaredCount > 0
+    ? widthBasedCount === undefined
+      ? declaredCount
+      : Math.min(declaredCount, widthBasedCount)
+    : widthBasedCount ?? 1;
+  if (columnCount <= 1) {
+    return [];
+  }
+
+  const contentLeft = bounds.left + leftInset;
+  const contentTop = bounds.top + topInset;
+  const commands: DrawCommand[] = [];
+  for (let index = 1; index < columnCount; index += 1) {
+    const ruleCenter =
+      contentLeft + (index * (contentWidth + gap)) / columnCount - gap / 2;
+    const relative = relativeRectangle(
+      {
+        left: ruleCenter - ruleWidth / 2,
+        top: contentTop,
+        width: ruleWidth,
+        height: contentHeight
+      },
+      page
+    );
+    if (relative !== undefined) {
+      commands.push({
+        kind: "fill",
+        x: relative.left,
+        y: relative.top,
+        width: relative.width,
+        height: relative.height,
+        color: ruleColor
+      });
+    }
+  }
+  return commands;
 }
 
 function imageCommand(
@@ -497,6 +580,7 @@ async function addTextCommands(
                 y: relative.top,
                 fontFamily: fontFamily(style),
                 fontStyle: fontStyle(style),
+                letterSpacing: Number.parseFloat(style.letterSpacing) || 0,
                 fontSize: Number.parseFloat(style.fontSize) || 16,
                 color
               });
@@ -560,6 +644,7 @@ export async function buildVectorPage(
 
   const collector = new CommandCollector();
   collector.addAll(backgroundCommands(root, page));
+  collector.addAll(columnRuleCommands(root, page));
   collector.addAll(borderCommands(root, page));
   for (const [index, element] of Array.from(elements).entries()) {
     if (index > 0 && index % YIELD_INTERVAL === 0) {
@@ -569,6 +654,7 @@ export async function buildVectorPage(
       continue;
     }
     collector.addAll(backgroundCommands(element, page));
+    collector.addAll(columnRuleCommands(element, page));
     collector.addAll(borderCommands(element, page));
     if (element instanceof HTMLImageElement) {
       const command = imageCommand(element, page);

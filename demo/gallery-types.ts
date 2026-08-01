@@ -18,4 +18,5 @@ export interface GalleryExample {
   readonly compareNotes: readonly string[];
   readonly html: string;
   readonly css: string;
+  readonly fixedPageMarginSelectors?: readonly string[];
 }

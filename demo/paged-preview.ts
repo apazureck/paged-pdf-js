@@ -1,7 +1,12 @@
 import { Previewer } from "pagedjs";
 import { pagedDomToPdf } from "../src/index.js";
+import {
+  materializeFootnoteMarkers,
+  prepareFootnoteLabels
+} from "./footnote-markers.js";
 import { synchronizePagedPageDimensions } from "./paged-preview-layout.js";
 import { replaceRenderHost } from "./render-host.js";
+import { repeatSplitTableHeaders } from "./table-headers.js";
 
 interface RenderMessage {
   readonly type: "render-paged-example";
@@ -122,13 +127,15 @@ async function render(message: RenderMessage): Promise<void> {
 
   const template = document.createElement("template");
   template.innerHTML = message.html;
+  const content = template.content.cloneNode(true) as DocumentFragment;
+  prepareFootnoteLabels(content);
   const instance = new Previewer();
   previewer = instance;
 
   try {
     await paginate(
       instance,
-      template.content.cloneNode(true) as DocumentFragment,
+      content,
       message.css,
       host,
       controller
@@ -142,6 +149,8 @@ async function render(message: RenderMessage): Promise<void> {
       return;
     }
 
+    repeatSplitTableHeaders(host);
+    materializeFootnoteMarkers(host);
     const htmlPageCount = host.querySelectorAll(".pagedjs_page").length;
     naturalPageWidth = synchronizePagedPageDimensions(host);
     const result = await pagedDomToPdf(host, {

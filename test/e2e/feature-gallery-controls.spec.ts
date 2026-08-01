@@ -27,6 +27,7 @@ test("updates source, Paged.js preview, PDF, and URL from live controls", async 
 
   await page.getByRole("button", { name: "Reset parameters" }).click();
   await expect(page.getByTestId("value-margin")).toHaveText("18 mm");
+  await expect(page.getByTestId("value-heading")).toHaveText("18 pt");
   await expect(page.getByTestId("css-source")).toContainText(
     "margin: 18mm !important"
   );

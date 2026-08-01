@@ -1,0 +1,42 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1280"
+  height="420"
+  viewBox="0 0 1280 420"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Paged PDF JS — HTML to direct PDF</title>
+  <desc id="description">
+    HTML flows through a vector path into a PDF document. The accompanying
+    message promises selectable text, vector graphics, and no page rasterization.
+  </desc>
+
+  <g transform="translate(38 54)">
+    <path d="M20 42c0-18 14-32 32-32h142l50 50v216c0 18-14 32-32 32H52c-18 0-32-14-32-32z" fill="#08303C"/>
+    <path d="M194 10v34c0 12 9 21 21 21h29z" fill="#2BB7CF"/>
+    <rect x="46" y="43" width="120" height="36" rx="18" fill="#F5A623"/>
+    <text x="106" y="69" fill="#08303C" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="800" text-anchor="middle">HTML</text>
+    <path d="M78 132l-26 24 26 24M132 132l26 24-26 24M120 116l-24 80" fill="none" stroke="#FDFBF7" stroke-linecap="round" stroke-linejoin="round" stroke-width="15"/>
+
+    <path d="M158 96c0-18 14-32 32-32h130l54 54v186c0 18-14 32-32 32H190c-18 0-32-14-32-32z" fill="#FDFBF7" stroke="#08303C" stroke-width="14"/>
+    <path d="M320 64v36c0 12 9 21 21 21h33z" fill="#E75252"/>
+    <rect x="194" y="221" width="142" height="60" rx="17" fill="#E75252"/>
+    <text x="265" y="265" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" letter-spacing="3" text-anchor="middle">PDF</text>
+
+    <path d="M122 232C164 190 205 188 251 202" fill="none" stroke="#F5A623" stroke-linecap="round" stroke-width="16"/>
+    <path d="M238 184l31 24-37 10z" fill="#F5A623"/>
+    <path d="M122 232l30-42M251 202l-14-44" stroke="#08303C" stroke-width="4"/>
+    <g fill="#FDFBF7" stroke="#08303C" stroke-width="5">
+      <circle cx="122" cy="232" r="10"/>
+      <circle cx="152" cy="190" r="8"/>
+      <circle cx="237" cy="158" r="8"/>
+      <circle cx="251" cy="202" r="10"/>
+    </g>
+  </g>
+
+  <text x="452" y="146" fill="#08303C" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="800" letter-spacing="-2">paged-pdf-js</text>
+  <text x="456" y="224" fill="#E75252" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" letter-spacing="2">HTML → DIRECT PDF</text>
+  <line x1="456" y1="257" x2="1208" y2="257" stroke="#2BB7CF" stroke-width="8"/>
+  <text x="456" y="316" fill="#41636C" font-family="Arial, Helvetica, sans-serif" font-size="29" font-weight="600">Selectable text + vector graphics. No page rasterization.</text>
+</svg>

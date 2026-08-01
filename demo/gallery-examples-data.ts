@@ -24,12 +24,15 @@ const png =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 const aliceLongFormHtml = `<article class="book">
+  <section class="cover-page">
+    <img class="book-cover" src="/media/alice-wonderland-1907-cover.jpg" alt="Illustrated 1907 cover of Alice's Adventures in Wonderland" width="960" height="1346">
+  </section>
   <section class="front-matter title-page">
     <p class="eyebrow">Long-form typesetting specimen</p>
     <h1>Alice's Adventures in Wonderland</h1>
     <p class="book-author">Lewis Carroll</p>
     <p class="book-deck">Selected passages from the first three chapters, arranged to test running heads and page-number restarts.</p>
-    <p class="source-note">Public-domain text, first published in 1865. Source: <a href="https://www.gutenberg.org/ebooks/11">Project Gutenberg eBook #11</a>.</p>
+    <p class="source-note">Public-domain text from <a href="https://www.gutenberg.org/ebooks/11">Project Gutenberg eBook #11</a>. Public-domain cover from <a href="https://commons.wikimedia.org/wiki/File:Alice%27s_Adventures_in_Wonderland_-_Carroll%2C_Robinson_-_S001_-_Cover.jpg">Wikimedia Commons</a>.</p>
   </section>
   <section class="front-matter contents-page">
     <p class="eyebrow">Contents</p>
@@ -214,8 +217,8 @@ code {
       "Solid cell fills and borders are supported.",
       "Separate borders avoid collapsed-border conflict resolution."
     ],
-    html: `<article><p class="eyebrow">Rich content / 05</p><h1>Survey register</h1><table><thead><tr><th>Station</th><th>Habitat</th><th>Index</th></tr></thead><tbody>${Array.from({ length: 24 }, (_, index) => `<tr><td>ST-${String(index + 1).padStart(2, "0")}</td><td>${["Salt marsh", "Mudflat", "Reed bed"][index % 3]}</td><td>${72 + (index % 19)}</td></tr>`).join("")}</tbody></table></article>`,
-    css: `@page { size: A5; margin: 15mm; } ${baseCss} table { width: 100%; border-spacing: 2px; font: 9pt Arial; } thead { display: table-header-group; } tr { break-inside: avoid; } th, td { padding: 3mm; border: 1px solid #9eb1b7; text-align: left; } th { background: #123f50; color: white; } tbody tr:nth-child(even) td { background: #e8f3f4; }`
+    html: `<article class="table-report"><table><caption><p class="eyebrow">Rich content / 05</p><h1>Survey register</h1></caption><thead><tr><th>Station</th><th>Habitat</th><th>Index</th></tr></thead><tbody>${Array.from({ length: 24 }, (_, index) => `<tr><td>ST-${String(index + 1).padStart(2, "0")}</td><td>${["Salt marsh", "Mudflat", "Reed bed"][index % 3]}</td><td>${72 + (index % 19)}</td></tr>`).join("")}</tbody></table></article>`,
+    css: `@page { size: A5; margin: 15mm; } ${baseCss} .table-report caption { caption-side: top; padding: 0 0 5mm; text-align: left; } .table-report caption > .eyebrow { margin-bottom: 2mm; } .table-report caption > h1 { margin: 0; } .table-report table { width: 100%; border-spacing: 2px; break-inside: auto; font: 9pt Arial; } .table-report table[data-split-from] caption { display: none; } .table-report tbody { break-inside: auto; } thead { display: table-header-group; } tr { break-inside: avoid; } th, td { padding: 2.5mm; border: 1px solid #9eb1b7; text-align: left; } th { background: #123f50; color: white; } tbody tr:nth-child(even) td { background: #e8f3f4; }`
   },
   {
     id: "media-links",
@@ -251,23 +254,40 @@ code {
       "The Paged.js HTML pane shows changing chapter heads and the numbering restart.",
       "Generated running text and counters may be absent from the PDF."
     ],
+    fixedPageMarginSelectors: ["cover"],
     html: aliceLongFormHtml,
-    css: `@page front-matter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, lower-roman); font: 8pt Arial; } } @page chapter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, decimal); font: 8pt Arial; } } @page chapter:left { @top-left { content: string(chapter); font: 700 7pt Arial; } } @page chapter:right { @top-right { content: string(chapter); font: 700 7pt Arial; } } ${baseCss} body { font-size: 11.5pt; line-height: 1.6; } .book h1 { font-size: 22pt; } .front-matter { page: front-matter; } .title-page { break-after: page; padding-top: 25mm; } .book-author { color: #c9472d; font: 700 13pt Arial; } .book-deck { margin-top: 14mm; font-size: 13pt; line-height: 1.4; } .source-note, .reader-note { margin-top: 18mm; color: #536871; font: 8pt/1.5 Arial; } .source-note a { color: #126c86; } .contents-page { break-before: page; } .contents { margin: 12mm 0 0; padding: 0; list-style-position: inside; font: 700 12pt/2 Arial; } .chapter { page: chapter; break-before: page; } .chapter-start { counter-reset: page 1; } .chapter h1 { string-set: chapter content(text); } .chapter p { margin-bottom: 3mm; }`
+    css: `@page cover { size: A5; margin: 0; } @page front-matter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, lower-roman); font: 8pt Arial; } } @page chapter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, decimal); font: 8pt Arial; } } @page chapter:left { @top-left { content: string(chapter); font: 700 7pt Arial; } } @page chapter:right { @top-right { content: string(chapter); font: 700 7pt Arial; } } ${baseCss} body { font-size: 11.5pt; line-height: 1.6; } .book h1 { font-size: 22pt; } .cover-page { width: 148mm; height: 210mm; margin: 0; padding: 0; page: cover; break-after: page; } .cover-page .book-cover { display: block; width: 148mm; height: 210mm; object-fit: cover; } .front-matter { page: front-matter; } .title-page { break-after: page; padding-top: 25mm; } .book-author { color: #c9472d; font: 700 13pt Arial; } .book-deck { margin-top: 14mm; font-size: 13pt; line-height: 1.4; } .source-note, .reader-note { margin-top: 18mm; color: #536871; font: 8pt/1.5 Arial; } .source-note a { color: #126c86; } .contents-page { break-before: page; } .contents { margin: 12mm 0 0; padding: 0; list-style-position: inside; font: 700 12pt/2 Arial; } .chapter { page: chapter; break-before: page; } .chapter-start { counter-reset: page 1; } .chapter h1 { string-set: chapter content(text); } .chapter p { margin-bottom: 3mm; }`
   },
   {
     id: "footnotes",
     group: "Generated content",
     title: "Footnotes",
     shortTitle: "Footnotes",
-    summary: "Paged.js moves note bodies and generates calls and markers.",
+    summary: "Three pages compare decimal, parenthesized, and bracketed footnote styles.",
     support: "partial",
-    features: ["float: footnote", "@footnote", "footnote call", "marker"],
+    features: ["float: footnote", "@footnote", "decimal markers", "(1) markers", "[1] markers"],
     compareNotes: [
-      "Moved footnote body text can translate.",
-      "Generated calls, markers, and internal navigation are not guaranteed."
+      "Each marker style gets its own page with the relevant CSS declaration.",
+      "Calls, markers, and moved note bodies remain selectable PDF text."
     ],
-    html: `<article><p class="eyebrow">Generated content / 08</p><h1>Reading with notes</h1><p>Notes stay close to their claims.<span class="footnote">A footnote moves into the page footnote area.</span> Paged.js creates its call automatically.</p>${prose}<p>A second note is numbered automatically.<span class="footnote">Calls and markers are generated content.</span></p></article>`,
-    css: `@page { size: A5; margin: 18mm 16mm 24mm; @footnote { float: bottom; border-top: 1px solid #17748b; padding-top: 3mm; } } ${baseCss} .footnote { float: footnote; color: #50656e; font: 8pt Arial; } ::footnote-call { content: counter(footnote); color: #c9472d; } ::footnote-marker { content: counter(footnote) ". "; color: #c9472d; }`
+    html: `<article class="footnote-style-page"><p class="eyebrow">Footnote styles / 01</p><h1>Decimal markers</h1><p>The default editorial style uses plain numbers.<span class="footnote footnote-decimal">A decimal footnote is concise and familiar.</span> Calls are generated where the note occurs.<span class="footnote footnote-decimal">The note body moves into the page footnote area.</span></p><h2>CSS declaration</h2><pre class="css-sample"><code>.footnote { float: footnote; }
+.footnote-decimal::footnote-call {
+  content: attr(data-footnote-label);
+}
+.footnote-decimal::footnote-marker {
+  content: attr(data-footnote-label) " ";
+}</code></pre></article><article class="footnote-style-page"><p class="eyebrow">Footnote styles / 02</p><h1>Parenthesized markers</h1><p>Round brackets create a softer reference mark. The prepared data-footnote-label supplies the complete label.<span class="footnote footnote-parenthesized">Parentheses visually separate the number from the sentence.</span> The same syntax controls call and marker.<span class="footnote footnote-parenthesized">Both labels stay selectable in the generated PDF.</span></p><h2>CSS declaration</h2><pre class="css-sample"><code>.footnote-parenthesized::footnote-call {
+  content: attr(data-footnote-label);
+}
+.footnote-parenthesized::footnote-marker {
+  content: attr(data-footnote-label) " ";
+}</code></pre></article><article class="footnote-style-page"><p class="eyebrow">Footnote styles / 03</p><h1>Bracketed markers</h1><p>Square brackets provide a compact technical style. The prepared data-footnote-label includes both brackets.<span class="footnote footnote-bracketed">Bracketed calls work well in documentation.</span> Color can distinguish the variant.<span class="footnote footnote-bracketed">Square brackets provide a compact alternative style.</span></p><h2>CSS declaration</h2><pre class="css-sample"><code>.footnote-bracketed::footnote-call {
+  content: attr(data-footnote-label);
+}
+.footnote-bracketed::footnote-marker {
+  content: attr(data-footnote-label) " ";
+}</code></pre></article>`,
+    css: `@page { size: A5; margin: 18mm 16mm 24mm; @top-left { content: string(footnote-style-title); color: #c9472d; font: 700 8pt Arial; letter-spacing: .12em; text-transform: uppercase; } @footnote { float: bottom; border-top: 1px solid #17748b; padding-top: 3mm; } } ${baseCss} .footnote-style-page { break-after: page; } .footnote-style-page:last-child { break-after: auto; } .footnote-style-page > .eyebrow { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; string-set: footnote-style-title content(text); } .footnote { float: footnote; color: #50656e; font: 8pt Arial; } .css-sample { margin-top: 4mm; padding: 4mm; border-left: 1mm solid #d8a52d; background: #f5f1e8; color: #283b43; white-space: pre-wrap; font: 7.5pt/1.45 Consolas, monospace; } .footnote-decimal::footnote-call { content: attr(data-footnote-label); color: #283b43; } .footnote-decimal::footnote-marker { content: attr(data-footnote-label) " "; color: #283b43; } .footnote-parenthesized::footnote-call { content: attr(data-footnote-label); color: #c9472d; } .footnote-parenthesized::footnote-marker { content: attr(data-footnote-label) " "; color: #c9472d; } .footnote-bracketed::footnote-call { content: attr(data-footnote-label); color: #17748b; } .footnote-bracketed::footnote-marker { content: attr(data-footnote-label) " "; color: #17748b; } .paged-pdf-footnote-call::after, .paged-pdf-footnote-note::before { content: none !important; } .paged-pdf-footnote-note::footnote-marker { content: none !important; } .paged-pdf-footnote-call-label, .paged-pdf-footnote-note-label { font-weight: 700; } .footnote-decimal .paged-pdf-footnote-call-label, .footnote-decimal .paged-pdf-footnote-note-label { color: #283b43; } .footnote-parenthesized .paged-pdf-footnote-call-label, .footnote-parenthesized .paged-pdf-footnote-note-label { color: #c9472d; } .footnote-bracketed .paged-pdf-footnote-call-label, .footnote-bracketed .paged-pdf-footnote-note-label { color: #17748b; }`
   },
   {
     id: "cross-references",
