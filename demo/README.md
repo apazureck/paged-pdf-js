@@ -9,7 +9,7 @@ npm run demo
 Then open:
 
 - `http://127.0.0.1:5173/` for the editable HTML/CSS playground and downloads.
-- `http://127.0.0.1:5173/gallery.html` for the Paged.js feature lab.
+- `http://127.0.0.1:5173/gallery.html` for the paged-pdf.js feature lab.
 - `http://127.0.0.1:5173/manual.html` for the developer manual.
 
 The demo command builds the library and prepares the same browser bundles and

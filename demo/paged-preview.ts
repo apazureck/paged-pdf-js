@@ -147,7 +147,7 @@ async function render(message: RenderMessage): Promise<void> {
     const result = await pagedDomToPdf(host, {
       signal: controller.signal,
       metadata: {
-        title: `${message.title} | paged-pdf-js feature lab`,
+        title: `${message.title} | paged-pdf.js feature lab`,
         author: "paged-pdf-js"
       },
       onProgress: ({ phase, page, totalPages }) => {
