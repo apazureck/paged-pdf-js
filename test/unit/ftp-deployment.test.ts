@@ -264,6 +264,59 @@ describe("FTP release workflow", () => {
     expect(stdout.trim()).toBe("True True 64");
   });
 
+  it("verifies that the FTPS directory is the public web root", async () => {
+    const source = [
+      "import tempfile",
+      "from pathlib import Path",
+      "from unittest.mock import patch",
+      "from scripts.deploy_ftp import verify_web_root",
+      "class Response:",
+      "    status = 200",
+      "    def __init__(self, payload): self.payload = payload",
+      "    def __enter__(self): return self",
+      "    def __exit__(self, *_args): pass",
+      "    def read(self, _limit): return self.payload",
+      "class FakeFtps:",
+      "    def upload(self, source, destination):",
+      "        self.destination = destination",
+      "        self.payload = source.read_bytes()",
+      "    def delete(self, path): self.deleted = path",
+      "ftps = FakeFtps()",
+      "def open_url(request, timeout):",
+      "    assert request.full_url.startswith('https://paged-pdf-js.pazureck.de/')",
+      "    assert timeout == 60",
+      "    return Response(ftps.payload)",
+      "with tempfile.TemporaryDirectory() as directory, patch('scripts.deploy_ftp.urllib.request.urlopen', side_effect=open_url):",
+      "    verify_web_root(ftps, Path(directory))",
+      "print(ftps.destination == ftps.deleted, ftps.destination.endswith('.txt'), len(ftps.payload))"
+    ].join("\n");
+    const { stdout } = await execFile("python", ["-c", source]);
+
+    expect(stdout).toContain("Deployment stage: upload-web-root-probe.");
+    expect(stdout).toContain("Deployment stage: verify-web-root.");
+    expect(stdout.trim()).toMatch(/True True 64$/u);
+  });
+
+  it("reports only a fixed category for an activation HTTP failure", async () => {
+    const source = [
+      "import io",
+      "from unittest.mock import patch",
+      "from urllib.error import HTTPError",
+      "from scripts.deploy_ftp import invoke_extractor",
+      "failure = HTTPError('https://sensitive.example/private', 404, 'sensitive-reason', {}, io.BytesIO(b'sensitive-response'))",
+      "with patch('scripts.deploy_ftp.urllib.request.urlopen', side_effect=failure):",
+      "    try:",
+      "        invoke_extractor('release.php', 'secret-token')",
+      "    except RuntimeError:",
+      "        pass"
+    ].join("\n");
+    const { stdout } = await execFile("python", ["-c", source]);
+
+    expect(stdout.trim()).toBe("Deployment activation result: http-404.");
+    expect(stdout).not.toContain("sensitive");
+    expect(stdout).not.toContain("secret-token");
+  });
+
   it("rejects unsafe remote directories before making a connection", async () => {
     await expect(
       execFile("python", [uploaderPath, "--check-config"], {
