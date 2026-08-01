@@ -24,4 +24,17 @@ describe("feature gallery registry", () => {
     expect(findGalleryExample("footnotes").id).toBe("footnotes");
     expect(findGalleryExample("missing").id).toBe(galleryExamples[0].id);
   });
+
+  it("defines front matter and chapter numbering for the long-form example", () => {
+    const example = findGalleryExample("running-content");
+
+    expect(example.html).toContain('class="front-matter');
+    expect(example.html.match(/class="chapter/gu)?.length).toBeGreaterThanOrEqual(
+      3
+    );
+    expect(example.css).toMatch(/counter\(page,\s*lower-roman\)/u);
+    expect(example.css).toMatch(/counter\(page,\s*decimal\)/u);
+    expect(example.css).toMatch(/counter-reset:\s*page\s+1/u);
+    expect(example.css).toMatch(/string-set:\s*chapter\s+content\(text\)/u);
+  });
 });

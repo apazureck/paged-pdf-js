@@ -58,6 +58,72 @@ test("deep links and synchronizes the selected example", async ({ page }) => {
   await expect(page.getByTestId("status")).toContainText(/[1-9]\d* pages?/u);
 });
 
+test("changes running chapter headers and restarts page numbering", async ({
+  page
+}) => {
+  await page.goto("/gallery.html#/examples/running-content");
+  await expect(page.getByTestId("paged-preview-status")).toContainText(
+    /[1-9]\d* pages?/u
+  );
+
+  const preview = page.frameLocator("#paged-preview");
+  const pages = preview.locator(".pagedjs_page");
+  expect(await pages.count()).toBeGreaterThanOrEqual(8);
+
+  const renderedPages = await pages.evaluateAll((elements) =>
+    elements.map((element) => {
+      const generatedContent = (selector: string): string => {
+        const marginContent = element.querySelector(selector);
+        return marginContent === null
+          ? ""
+          : getComputedStyle(marginContent, "::after").content;
+      };
+
+      return {
+        className: element.getAttribute("class") ?? "",
+        counterReset: getComputedStyle(element).counterReset,
+        footer: generatedContent(
+          ".pagedjs_margin-bottom-center .pagedjs_margin-content"
+        ),
+        header:
+          generatedContent(
+            ".pagedjs_margin-top-left .pagedjs_margin-content"
+          ) ||
+          generatedContent(
+            ".pagedjs_margin-top-right .pagedjs_margin-content"
+          )
+      };
+    })
+  );
+
+  const frontMatterPages = renderedPages.filter(({ className }) =>
+    className.includes("pagedjs_front-matter_page")
+  );
+  expect(frontMatterPages).toHaveLength(2);
+  expect(frontMatterPages.map(({ footer }) => footer)).toEqual([
+    "counter(page, lower-roman)",
+    "counter(page, lower-roman)"
+  ]);
+
+  const chapterPages = renderedPages.filter(({ className }) =>
+    className.includes("pagedjs_chapter_page")
+  );
+  expect(chapterPages[0]?.counterReset).toBe("page 1");
+  expect(new Set(chapterPages.map(({ footer }) => footer))).toEqual(
+    new Set(["counter(page)"])
+  );
+
+  for (const title of [
+    "Chapter I: Down the Rabbit-Hole",
+    "Chapter II: The Pool of Tears",
+    "Chapter III: A Caucus-Race and a Long Tale"
+  ]) {
+    expect(chapterPages.filter(({ header }) => header.includes(title))).toHaveLength(
+      2
+    );
+  }
+});
+
 test("stacks the proof stages without horizontal overflow on mobile", async ({
   page
 }) => {
