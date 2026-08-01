@@ -30,6 +30,22 @@ describe("public site release configuration", () => {
     expect(contents.join("\n")).toContain(canonicalSite);
   });
 
+  it("uses the paged-pdf.js feature lab brand consistently", async () => {
+    const [gallery, preview, demoReadme] = await Promise.all([
+      readProjectFile("demo/gallery.html"),
+      readProjectFile("demo/paged-preview.ts"),
+      readProjectFile("demo/README.md")
+    ]);
+    const brandedFiles = [gallery, preview, demoReadme].join("\n");
+
+    expect(gallery).toContain("<title>paged-pdf.js feature lab</title>");
+    expect(gallery).toContain(">paged-pdf.js feature lab</h1>");
+    expect(preview).toContain("paged-pdf.js feature lab");
+    expect(demoReadme).toContain("paged-pdf.js feature lab");
+    expect(brandedFiles).not.toContain("Paged.js feature lab");
+    expect(brandedFiles).not.toContain("paged-pdf-js feature lab");
+  });
+
   it("builds and smoke-tests the manual and browser download", async () => {
     const workflow = await readProjectFile(".github/workflows/deploy.yml");
 
