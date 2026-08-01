@@ -170,7 +170,7 @@ def render_extractor(
         if placeholder not in result:
             raise RuntimeError(f"Extractor template is missing {placeholder}.")
         result = result.replace(placeholder, value)
-    if re.search(r"__[A-Z0-9_]+__", result):
+    if any(placeholder in result for placeholder in replacements):
         raise RuntimeError("Extractor template has unresolved placeholders.")
     return result
 
