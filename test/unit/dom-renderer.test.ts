@@ -178,4 +178,52 @@ describe("Paged DOM vector translation", () => {
 
     expect(text).toBe("Chapter I:");
   });
+
+  it("renders static Paged.js margin-box content", async () => {
+    const page = document.createElement("div");
+    const marginBox = document.createElement("div");
+    const marginContent = document.createElement("div");
+    marginBox.className = "pagedjs_margin pagedjs_margin-top-left";
+    marginContent.className = "pagedjs_margin-content";
+    marginContent.style.textAlign = "left";
+    marginBox.append(marginContent);
+    page.append(marginBox);
+    document.body.append(page);
+    place(page, 100, 50, 816, 1056);
+    place(marginContent, 124, 74, 240, 12);
+
+    const getStyle = window.getComputedStyle.bind(window);
+    vi.spyOn(window, "getComputedStyle").mockImplementation(
+      (element, pseudoElement) =>
+        element === marginContent && pseudoElement === "::after"
+          ? ({
+              color: "rgb(20, 40, 60)",
+              content: '"PAGED MEDIA FIELD NOTES"',
+              display: "block",
+              fontFamily: "Arial",
+              fontSize: "10px",
+              fontStyle: "normal",
+              fontWeight: "700",
+              opacity: "1",
+              textTransform: "none",
+              visibility: "visible"
+            } as CSSStyleDeclaration)
+          : getStyle(element, pseudoElement)
+    );
+
+    const result = await buildVectorPage(page);
+
+    expect(result.commands).toContainEqual(
+      expect.objectContaining({
+        kind: "text",
+        text: "PAGED MEDIA FIELD NOTES",
+        x: 24,
+        y: 24,
+        fontFamily: "helvetica",
+        fontStyle: "bold",
+        fontSize: 10,
+        color: [20, 40, 60]
+      })
+    );
+  });
 });

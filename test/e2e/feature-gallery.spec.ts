@@ -30,6 +30,20 @@ test("shows source, Paged.js HTML, and PDF proof stages", async ({ page }) => {
   );
   await expect(page.getByTestId("status")).toContainText(/[1-9]\d* pages?/u);
   await expect(page.getByTitle("Generated PDF preview")).toBeVisible();
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download PDF" }).click();
+  const download = await downloadPromise;
+  const downloadPath = await download.path();
+  const bytes = new Uint8Array(await readFile(downloadPath!));
+  const pdf = await getDocument({ data: bytes }).promise;
+  const firstPage = await pdf.getPage(1);
+  const textContent = await firstPage.getTextContent();
+  const pdfText = textContent.items
+    .map((item) => ("str" in item ? item.str : ""))
+    .join(" ");
+
+  expect(pdfText).toContain("PAGED MEDIA FIELD NOTES");
 });
 
 test("deep links and synchronizes the selected example", async ({ page }) => {
