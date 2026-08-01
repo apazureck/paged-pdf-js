@@ -243,6 +243,45 @@ test("changes running chapter headers and restarts page numbering", async ({
   expect(pdfText).not.toMatch(/Chapter\s+Chapter/u);
 });
 
+test("shows protected and forced fragmentation boundaries", async ({ page }) => {
+  await page.goto("/gallery.html#/examples/fragmentation");
+  await expect(page.getByTestId("paged-preview-status")).toContainText(
+    /[1-9]\d* pages?/u
+  );
+
+  const geometry = await page
+    .frameLocator("#paged-preview")
+    .locator(".pagedjs_pages")
+    .evaluate((pages) => {
+      const pageNumber = (selector: string): number | undefined => {
+        const element = pages.querySelector(selector);
+        const page = element?.closest<HTMLElement>(".pagedjs_page");
+        const value = Number(page?.dataset.pageNumber);
+        return Number.isFinite(value) ? value : undefined;
+      };
+      const protectedPages = Array.from(
+        pages.querySelectorAll(".keep-together")
+      ).map((element) =>
+        Number(
+          element.closest<HTMLElement>(".pagedjs_page")?.dataset.pageNumber
+        )
+      );
+
+      return {
+        openingTail: pageNumber(".opening-tail"),
+        protectedPages: [...new Set(protectedPages)],
+        breakBefore: pageNumber(".break-before-page"),
+        breakAfter: pageNumber(".break-after-page"),
+        closing: pageNumber(".closing-page")
+      };
+    });
+
+  expect(geometry.protectedPages).toHaveLength(1);
+  expect(geometry.protectedPages[0]).toBeGreaterThan(geometry.openingTail!);
+  expect(geometry.breakBefore).toBeGreaterThan(geometry.protectedPages[0]!);
+  expect(geometry.closing).toBe(geometry.breakAfter! + 1);
+});
+
 test("stacks the proof stages without horizontal overflow on mobile", async ({
   page
 }) => {

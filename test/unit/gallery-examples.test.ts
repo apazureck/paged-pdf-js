@@ -37,4 +37,32 @@ describe("feature gallery registry", () => {
     expect(example.css).toMatch(/counter-reset:\s*page\s+1/u);
     expect(example.css).toMatch(/string-set:\s*chapter\s+content\(text\)/u);
   });
+
+  it("documents each fragmentation rule on the element that applies it", () => {
+    const example = findGalleryExample("fragmentation");
+    const document = new DOMParser().parseFromString(example.html, "text/html");
+
+    expect(
+      document.querySelectorAll(".opening-sequence > .flow-copy").length
+    ).toBeGreaterThanOrEqual(6);
+    expect(document.querySelector(".keep-together")?.textContent).toContain(
+      "break-inside: avoid"
+    );
+    expect(document.querySelector(".break-before-page")?.textContent).toContain(
+      "break-before: page"
+    );
+    expect(document.querySelector(".break-after-page")?.textContent).toContain(
+      "break-after: page"
+    );
+    expect(example.css).toMatch(
+      /\.keep-together\s*\{[^}]*break-inside:\s*avoid/u
+    );
+    expect(example.css).toMatch(
+      /\.break-before-page\s*\{[^}]*break-before:\s*page/u
+    );
+    expect(example.css).toMatch(
+      /\.break-after-page\s*\{[^}]*break-after:\s*page/u
+    );
+    expect(example.features).toContain("break-after");
+  });
 });
