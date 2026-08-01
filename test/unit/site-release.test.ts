@@ -75,22 +75,20 @@ describe("public site release configuration", () => {
     );
   });
 
-  it("uses a one-shot FTPS release and removes stale managed files", async () => {
-    const [workflow, uploader, extractor] = await Promise.all([
+  it("uses a transactional FTPS release and removes stale managed files", async () => {
+    const [workflow, uploader] = await Promise.all([
       readProjectFile(".github/workflows/deploy.yml"),
-      readProjectFile("scripts/deploy_ftp.py"),
-      readProjectFile("deploy/ftp-extract-template.php")
+      readProjectFile("scripts/deploy_ftp.py")
     ]);
 
     expect(workflow).toContain("python scripts/deploy_ftp.py demo-dist");
-    expect(uploader).toContain("finally:");
-    expect(uploader).toContain("ftps.delete(archive.name)");
-    expect(uploader).toContain("ftps.delete(script.name)");
-    expect(extractor).toContain("previousManagedFiles(__DIR__)");
-    expect(extractor).toContain("backupLiveFiles");
-    expect(extractor).toContain("rollbackRelease");
-    expect(extractor).toContain("@unlink($archivePath)");
-    expect(extractor).toContain("@unlink($scriptPath)");
+    expect(workflow).toContain("Activate release with transactional FTPS");
+    expect(uploader).toContain("def activate_ftps_release(");
+    expect(uploader).toContain("def rollback_ftps_release(");
+    expect(uploader).toContain("def previous_managed_files(");
+    expect(uploader).not.toContain(
+      "lambda: invoke_extractor(script.name, token)"
+    );
   });
 
   it("pins every third-party workflow action to a commit", async () => {
