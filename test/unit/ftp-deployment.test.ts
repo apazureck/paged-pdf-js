@@ -216,6 +216,28 @@ describe("FTP release workflow", () => {
     ]);
   });
 
+  it("grants PHP group write access only to managed directories and restores it", async () => {
+    const source = [
+      "from scripts.deploy_ftp import grant_php_write_access, restore_site_permissions",
+      "class FakeFtps:",
+      "    def __init__(self): self.calls = []",
+      "    def chmod_if_exists(self, path, mode): self.calls.append((path, mode)); return path != 'new'",
+      "ftps = FakeFtps()",
+      "changed = grant_php_write_access(ftps, ('assets/app.js', 'new/page.html', '.well-known/paged-pdf-managed-files.json'))",
+      "restore_site_permissions(ftps, changed)",
+      "print(changed)",
+      "print(ftps.calls)"
+    ].join("\n");
+    const { stdout } = await execFile("python", ["-c", source]);
+
+    expect(stdout).toContain("('.', '.well-known', 'assets')");
+    expect(stdout).toContain("('.', 509)");
+    expect(stdout).toContain("('assets', 509)");
+    expect(stdout).toContain("('assets', 493)");
+    expect(stdout).toContain("('.', 493)");
+    expect(stdout).not.toContain("app.js', 509");
+  });
+
   it("reports the failing FTPS stage without exposing server details", async () => {
     const source = [
       "from unittest.mock import patch",

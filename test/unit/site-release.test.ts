@@ -87,6 +87,9 @@ describe("public site release configuration", () => {
       "Upload ZIP and activate it through the one-shot PHP extractor"
     );
     expect(uploader).toContain("lambda: invoke_extractor(script.name, token)");
+    expect(uploader).toContain("grant_php_write_access");
+    expect(uploader).toContain("restore_site_permissions");
+    expect(uploader).toContain('"restore-site-permissions"');
     expect(uploader).toContain("finally:");
     expect(uploader).toContain("ftps.delete(archive.name)");
     expect(uploader).toContain("ftps.delete(script.name)");
