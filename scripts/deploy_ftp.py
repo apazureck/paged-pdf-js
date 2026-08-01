@@ -346,6 +346,20 @@ class Ftps:
             raise
         return True
 
+    def chmod_if_exists(self, path: str, mode: int) -> bool:
+        if self.client is None:
+            raise RuntimeError("FTPS is not connected.")
+        if mode not in {0o755, 0o775}:
+            raise ValueError("Unsupported site permission mode.")
+        target = "." if path == "." else safe_release_path(path)
+        try:
+            self.client.sendcmd(f"SITE CHMOD {mode:o} {target}")
+        except error_perm as error:
+            if str(error).startswith("550"):
+                return False
+            raise
+        return True
+
     def delete(self, path: str) -> None:
         if self.client is None:
             return
@@ -537,6 +551,45 @@ def activate_ftps_release(
         raise DeploymentStageError("cleanup-release") from error
 
 
+def release_directories(paths: tuple[str, ...]) -> tuple[str, ...]:
+    directories = {"."}
+    for raw_path in paths:
+        parent = PurePosixPath(safe_release_path(raw_path)).parent
+        while parent.as_posix() != ".":
+            directories.add(parent.as_posix())
+            parent = parent.parent
+    return tuple(sorted(directories, key=lambda path: (path.count("/"), path)))
+
+
+def restore_site_permissions(
+    ftps: Ftps,
+    directories: tuple[str, ...],
+) -> None:
+    first_error: Exception | None = None
+    for directory in reversed(directories):
+        try:
+            ftps.chmod_if_exists(directory, 0o755)
+        except Exception as error:
+            first_error = first_error or error
+    if first_error is not None:
+        raise RuntimeError("Could not restore site permissions.") from first_error
+
+
+def grant_php_write_access(
+    ftps: Ftps,
+    managed_paths: tuple[str, ...],
+) -> tuple[str, ...]:
+    changed: tuple[str, ...] = ()
+    try:
+        for directory in release_directories(managed_paths):
+            if ftps.chmod_if_exists(directory, 0o775):
+                changed = (*changed, directory)
+    except Exception:
+        restore_site_permissions(ftps, changed)
+        raise
+    return changed
+
+
 def invoke_extractor(script_name: str, token: str) -> None:
     request = urllib.request.Request(
         f"{SITE_URL}{script_name}",
@@ -603,6 +656,15 @@ def deploy(root: Path) -> None:
         )
         with Ftps(settings) as ftps:
             verify_web_root(ftps, Path(temporary))
+            previous_files = run_deployment_stage(
+                "read-release-manifest",
+                lambda: previous_managed_files(ftps),
+            )
+            managed_paths = (
+                *tuple(files),
+                *previous_files,
+                MANIFEST_PATH,
+            )
             try:
                 run_deployment_stage(
                     "upload-archive",
@@ -612,10 +674,23 @@ def deploy(root: Path) -> None:
                     "upload-extractor",
                     lambda: ftps.upload(script, script.name),
                 )
-                run_deployment_stage(
-                    "activate-release",
-                    lambda: invoke_extractor(script.name, token),
+                writable_directories = run_deployment_stage(
+                    "grant-extractor-write-access",
+                    lambda: grant_php_write_access(ftps, managed_paths),
                 )
+                try:
+                    run_deployment_stage(
+                        "activate-release",
+                        lambda: invoke_extractor(script.name, token),
+                    )
+                finally:
+                    run_deployment_stage(
+                        "restore-site-permissions",
+                        lambda: restore_site_permissions(
+                            ftps,
+                            writable_directories,
+                        ),
+                    )
             finally:
                 ftps.delete(archive.name)
                 ftps.delete(script.name)
