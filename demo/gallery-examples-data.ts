@@ -13,6 +13,12 @@ const prose = `<p>Paged media turns a continuous document into finite sheets wit
 margins, and a deliberate reading rhythm.</p><p>Paged.js establishes each
 fragment before the PDF writer translates the geometry into selectable text
 and vector shapes.</p>`;
+const fragmentationLead = `<p class="flow-copy">A paged document starts as one continuous flow. Each paragraph below consumes enough vertical space to bring the protected note close to a page boundary.</p>
+<p class="flow-copy">Browsers first compose line boxes, then Paged.js assigns those boxes to finite sheets with physical margins.</p>
+<p class="flow-copy">The widows and orphans declarations keep a minimum number of lines together when an ordinary paragraph crosses a page edge.</p>
+<p class="flow-copy">The orange note uses a stronger rule because its border, heading, and supporting copy must remain one visual unit.</p>
+<p class="flow-copy">Without fragmentation control, the available space could hold only the beginning of that note and its remainder would continue on the next sheet.</p>
+<p class="flow-copy opening-tail">This final lead-in paragraph deliberately leaves too little room for the complete note that follows.</p>`;
 
 const png =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
@@ -105,13 +111,66 @@ export const galleryExamples = [
     shortTitle: "Breaks & fragments",
     summary: "Forced transitions, protected boxes, widows, and orphans.",
     support: "match",
-    features: ["break-before", "break-inside", "widows", "orphans"],
+    features: ["break-before", "break-after", "break-inside", "widows", "orphans"],
     compareNotes: [
       "Colored labels make forced page boundaries easy to compare.",
       "Paged.js fragment coordinates are reused by the PDF writer."
     ],
-    html: `<section><p class="eyebrow">Fragmentation / 02</p><h1>Opening sequence</h1>${prose}<aside><strong>Keep this note together.</strong>${prose}</aside></section><section class="new-page"><p class="eyebrow">Forced page</p><h1>Second movement</h1>${prose}${prose}</section><section class="new-page"><h1>Closing page</h1>${prose}</section>`,
-    css: `@page { size: A5; margin: 16mm; @bottom-center { content: counter(page); } } ${baseCss} section { widows: 3; orphans: 3; } .new-page { break-before: page; } aside { padding: 6mm; break-inside: avoid; border: 1mm solid #dd704f; background: #fff0e8; }`
+    html: `<section class="opening-sequence">
+  <p class="eyebrow">Fragmentation / 02</p>
+  <h1>Opening sequence</h1>
+  ${fragmentationLead}
+  <aside class="keep-together">
+    <strong>Keep this note together: <code>break-inside: avoid</code></strong>
+    <p>The border, heading, and all three paragraphs belong to one protected fragment.</p>
+    <p>Paged.js moves the complete box to the next page when the remaining space is too small.</p>
+    <p>The rule prevents a split inside this box; it does not prevent the box itself from moving.</p>
+  </aside>
+</section>
+<section class="second-movement">
+  <p class="rule-label break-before-page"><strong><code>break-before: page</code></strong> This paragraph starts the second movement on a new page.</p>
+  <h1>Second movement</h1>
+  ${prose}${prose}
+  <p class="rule-label break-after-page"><strong><code>break-after: page</code></strong> This paragraph ends the current page, so the closing section starts on the next one.</p>
+</section>
+<section class="closing-page">
+  <p class="eyebrow">Following break-after / 03</p>
+  <h1>Closing page</h1>
+  ${prose}
+</section>`,
+    css: `@page {
+  size: A5;
+  margin: 16mm;
+  @bottom-center { content: counter(page); }
+}
+${baseCss}
+p {
+  widows: 3;
+  orphans: 3;
+}
+.keep-together {
+  break-inside: avoid;
+  padding: 6mm;
+  border: 1mm solid #dd704f;
+  background: #fff0e8;
+}
+.keep-together p:last-child {
+  margin-bottom: 0;
+}
+.break-before-page {
+  break-before: page;
+}
+.break-after-page {
+  break-after: page;
+}
+.rule-label {
+  padding: 4mm;
+  border-left: 1.5mm solid #17748b;
+  background: #e8f3f4;
+}
+code {
+  font: 700 9pt Consolas, monospace;
+}`
   },
   {
     id: "named-pages",
