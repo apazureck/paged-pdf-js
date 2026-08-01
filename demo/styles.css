@@ -52,15 +52,11 @@ footer {
   align-items: center;
 }
 
-.wordmark span {
-  display: grid;
-  width: 30px;
-  height: 38px;
-  place-items: center;
-  border-radius: 2px 8px 8px 2px;
-  background: #0c7289;
-  color: white;
-  font-family: Georgia, serif;
+.wordmark img {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  object-fit: contain;
 }
 
 .github-link {

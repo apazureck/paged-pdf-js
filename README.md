@@ -1,13 +1,21 @@
 # paged-pdf-js
 
+<p align="center">
+  <img
+    src="https://raw.githubusercontent.com/apazureck/paged-pdf-js/main/demo/public/brand/paged-pdf-js-logo.png"
+    alt="paged-pdf-js logo"
+    width="180"
+  />
+</p>
+
 Convert HTML into paged, vector-oriented PDFs entirely in the browser.
 `paged-pdf-js` uses [Paged.js](https://pagedjs.org/) for CSS Paged Media
 layout, reads the geometry of the resulting page DOM, and writes PDF drawing
 primitives with [jsPDF](https://github.com/parallax/jsPDF).
 
-The authoring path does not take page screenshots, use html2canvas, or call
-`jsPDF.html()`. Text is written as PDF text and remains selectable and
-searchable.
+The default vector path does not take page screenshots or use the jsPDF HTML renderer.
+Text remains selectable and searchable. Optional hybrid and raster modes use
+html2canvas for browser-accurate visual effects.
 
 [Try the playground](https://paged-pdf-js.pazureck.de) |
 [Read the developer manual](https://paged-pdf-js.pazureck.de/manual.html) |
@@ -85,6 +93,7 @@ The current deployed browser bundles are available directly:
 
 - [Standalone UMD bundle](https://paged-pdf-js.pazureck.de/downloads/paged-pdf.min.js)
 - [ES module bundle](https://paged-pdf-js.pazureck.de/downloads/paged-pdf.js)
+- [GitHub Raw download](https://raw.githubusercontent.com/apazureck/paged-pdf-js/main/browser/paged-pdf.min.js)
 - [Complete download and setup guide](https://paged-pdf-js.pazureck.de/manual.html#browser-bundles)
 
 The standalone build exposes `window.PagedPdf`:
@@ -100,8 +109,21 @@ The standalone build exposes `window.PagedPdf`:
 </script>
 ```
 
-Pin an exact npm or UNPKG version in production. Files under the custom
-domain's stable `/downloads/` paths represent the current deployed build.
+To use the committed GitHub bundle directly in a browser, load it through
+GitHub's jsDelivr endpoint:
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/apazureck/paged-pdf-js@main/browser/paged-pdf.min.js"></script>
+```
+
+GitHub Raw is suitable for downloading the minified file, but GitHub serves
+raw JavaScript as `text/plain` with MIME sniffing disabled. Browsers therefore
+reject the Raw URL in a `<script>` element. jsDelivr serves the same GitHub file
+with an executable JavaScript content type.
+
+Pin an exact npm version, Git tag, or commit SHA in production. Files under the
+custom domain's stable `/downloads/` paths represent the current deployed
+build.
 
 ## API
 
@@ -135,6 +157,7 @@ interface HtmlToPdfOptions {
   readonly styleText?: string;
   readonly baseUrl?: string;
   readonly allowedResourceOrigins?: readonly string[];
+  readonly renderMode?: "vector" | "hybrid" | "raster";
   readonly metadata?: {
     readonly title?: string;
     readonly author?: string;
@@ -149,6 +172,13 @@ interface HtmlToPdfOptions {
   }) => void;
 }
 ```
+
+renderMode defaults to "vector". Use "hybrid" for browser-accurate visual
+effects such as shadows, gradients, transforms, SVG, and complex border radii:
+each page is rasterized while invisible PDF text and link annotations remain
+available. Use "raster" when visual fidelity matters more than selectable
+text. Raster modes produce larger files and text is not rendered as native
+visible PDF glyphs.
 
 Resource URLs are same-origin by default. Add trusted origins explicitly for
 PNG/JPEG `<img src>` resources:
@@ -208,7 +238,8 @@ image pixels, and PDF output.
 
 ## Development
 
-Requires Node.js 20.19 or later; CI and release jobs use Node.js 24.
+Requires Node.js 20.19+, Python 3.12+, and PHP 8.2+ with the ZIP
+extension; CI and release jobs use Node.js 24 and Python 3.12.
 
 ```bash
 npm install
@@ -225,8 +256,9 @@ checks. Coverage must remain at least 80%.
 
 - The static site build includes the manual and direct downloads under
   `demo-dist/`.
-- A successful `main` CI run triggers the protected SSH deployment workflow
-  for `paged-pdf-js.pazureck.de`.
+- A successful `main` CI run triggers the protected explicit-FTPS deployment:
+  one ZIP upload is validated and transactionally activated by a one-shot PHP
+  extractor, with automatic restoration of the prior release on failure.
 - Publishing a GitHub Release whose tag matches `v<package.version>` runs the
   npm release workflow with provenance.
 - UNPKG serves the npm package automatically; no separate upload is needed.

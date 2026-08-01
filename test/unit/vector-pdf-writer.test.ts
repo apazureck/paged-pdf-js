@@ -27,6 +27,7 @@ describe("vector PDF writer", () => {
             fontFamily: "helvetica",
             fontStyle: "bold",
             fontSize: 18,
+            letterSpacing: 0,
             color: [20, 30, 40]
           },
           {
@@ -61,5 +62,71 @@ describe("vector PDF writer", () => {
       ])
     );
     expect(onPageWritten).toHaveBeenCalledWith(1);
+  });
+
+  it("writes rounded vector fills", async () => {
+    const bytes = await writeVectorPdf([{
+      widthCssPixels: 200,
+      heightCssPixels: 200,
+      commands: [{
+        kind: "roundedFill",
+        x: 20,
+        y: 20,
+        width: 100,
+        height: 60,
+        radiusX: 12,
+        radiusY: 12,
+        color: [10, 20, 30]
+      }]
+    }]);
+
+    expect(bytes.byteLength).toBeGreaterThan(500);
+  });
+
+  it("preserves CSS letter spacing in selectable PDF text", async () => {
+    const pages: readonly VectorPage[] = [
+      {
+        widthCssPixels: 816,
+        heightCssPixels: 1056,
+        commands: [
+          {
+            kind: "text",
+            text: "Spacing",
+            x: 32,
+            y: 32,
+            fontFamily: "helvetica",
+            fontStyle: "normal",
+            fontSize: 16,
+            letterSpacing: 0,
+            color: [20, 30, 40]
+          },
+          {
+            kind: "text",
+            text: "Spacing",
+            x: 32,
+            y: 64,
+            fontFamily: "helvetica",
+            fontStyle: "normal",
+            fontSize: 16,
+            letterSpacing: 4,
+            color: [20, 30, 40]
+          }
+        ]
+      }
+    ];
+
+    const bytes = await writeVectorPdf(pages);
+    const pdf = await getDocument({ data: bytes.slice() }).promise;
+    const page = await pdf.getPage(1);
+    const text = await page.getTextContent();
+    const spacingItems = text.items.filter((item) =>
+      "str" in item && item.str.replace(/\s+/gu, "") === "Spacing"
+    );
+    const widths = spacingItems.map((item) =>
+      "width" in item ? item.width : 0
+    );
+
+    expect(widths).toHaveLength(2);
+    expect(widths[1]).toBeGreaterThan(widths[0]! + 10);
   });
 });

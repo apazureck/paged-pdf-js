@@ -36,7 +36,10 @@
     }
   },
   "files": [
-    "dist",
+    "dist/index.d.ts",
+    "dist/paged-pdf.js",
+    "dist/paged-pdf.cjs",
+    "dist/paged-pdf.min.js",
     "LICENSE",
     "README.md",
     "THIRD_PARTY_NOTICES.md"
@@ -46,8 +49,9 @@
   },
   "scripts": {
     "build": "npm run build:lib && npm run prepare:downloads && npm run build:demo",
-    "build:lib": "vite build",
+    "build:lib": "vite build && npm run prepare:browser",
     "build:demo": "vite build --config vite.demo.config.ts",
+    "prepare:browser": "node scripts/prepare-browser-bundle.mjs",
     "prepare:downloads": "node scripts/prepare-downloads.mjs",
     "prepare:demo": "npm run build:lib && npm run prepare:downloads",
     "demo": "npm run prepare:demo && vite --config vite.demo.config.ts --host 127.0.0.1",
@@ -66,6 +70,7 @@
   },
   "dependencies": {
     "css-tree": "^3.2.1",
+    "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "pagedjs": "^0.4.3"
   },

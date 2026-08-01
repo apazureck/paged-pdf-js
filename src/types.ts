@@ -1,4 +1,5 @@
 export type ProgressPhase = "paginate" | "assets" | "render" | "write";
+export type RenderMode = "hybrid" | "raster" | "vector";
 
 export interface ConversionProgress {
   readonly phase: ProgressPhase;
@@ -15,6 +16,7 @@ export interface PdfMetadata {
 
 export interface PagedDomToPdfOptions {
   readonly metadata?: PdfMetadata;
+  readonly renderMode?: RenderMode;
   readonly signal?: AbortSignal;
   readonly onProgress?: (progress: ConversionProgress) => void;
 }

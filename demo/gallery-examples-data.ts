@@ -13,9 +13,83 @@ const prose = `<p>Paged media turns a continuous document into finite sheets wit
 margins, and a deliberate reading rhythm.</p><p>Paged.js establishes each
 fragment before the PDF writer translates the geometry into selectable text
 and vector shapes.</p>`;
+const fragmentationLead = `<p class="flow-copy">A paged document starts as one continuous flow. Each paragraph below consumes enough vertical space to bring the protected note close to a page boundary.</p>
+<p class="flow-copy">Browsers first compose line boxes, then Paged.js assigns those boxes to finite sheets with physical margins.</p>
+<p class="flow-copy">The widows and orphans declarations keep a minimum number of lines together when an ordinary paragraph crosses a page edge.</p>
+<p class="flow-copy">The orange note uses a stronger rule because its border, heading, and supporting copy must remain one visual unit.</p>
+<p class="flow-copy">Without fragmentation control, the available space could hold only the beginning of that note and its remainder would continue on the next sheet.</p>
+<p class="flow-copy opening-tail">This final lead-in paragraph deliberately leaves too little room for the complete note that follows.</p>`;
 
 const png =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+
+const aliceLongFormHtml = `<article class="book">
+  <section class="cover-page">
+    <img class="book-cover" src="/media/alice-wonderland-1907-cover.jpg" alt="Illustrated 1907 cover of Alice's Adventures in Wonderland" width="960" height="1346">
+  </section>
+  <section class="front-matter title-page">
+    <p class="eyebrow">Long-form typesetting specimen</p>
+    <h1>Alice's Adventures in Wonderland</h1>
+    <p class="book-author">Lewis Carroll</p>
+    <p class="book-deck">Selected passages from the first three chapters, arranged to test running heads and page-number restarts.</p>
+    <p class="source-note">Public-domain text from <a href="https://www.gutenberg.org/ebooks/11">Project Gutenberg eBook #11</a>. Public-domain cover from <a href="https://commons.wikimedia.org/wiki/File:Alice%27s_Adventures_in_Wonderland_-_Carroll%2C_Robinson_-_S001_-_Cover.jpg">Wikimedia Commons</a>.</p>
+  </section>
+  <section class="front-matter contents-page">
+    <p class="eyebrow">Contents</p>
+    <h1>Three chapters</h1>
+    <ol class="contents">
+      <li>Down the Rabbit-Hole</li>
+      <li>The Pool of Tears</li>
+      <li>A Caucus-Race and a Long Tale</li>
+    </ol>
+    <p class="reader-note">The preliminary pages use lower-case Roman numerals. Chapter I restarts the page counter at Arabic 1.</p>
+  </section>
+  <section class="chapter chapter-start">
+    <h1>Chapter I: Down the Rabbit-Hole</h1>
+    <div class="chapter-page">
+      <p>Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, "and what is the use of a book," thought Alice, "without pictures or conversations?"</p>
+      <p>So she was considering in her own mind, as well as she could, for the hot day made her feel very sleepy and stupid, whether the pleasure of making a daisy-chain would be worth the trouble of getting up and picking the daisies, when suddenly a White Rabbit with pink eyes ran close by her.</p>
+      <p>There was nothing so very remarkable in that; nor did Alice think it so very much out of the way to hear the Rabbit say to itself, "Oh dear! Oh dear! I shall be late!" But when the Rabbit actually took a watch out of its waistcoat-pocket, and looked at it, and then hurried on, Alice started to her feet.</p>
+      <p>Burning with curiosity, she ran across the field after it, and fortunately was just in time to see it pop down a large rabbit-hole under the hedge. In another moment down went Alice after it, never once considering how in the world she was to get out again.</p>
+    </div>
+    <div class="chapter-page">
+      <p>The rabbit-hole went straight on like a tunnel for some way, and then dipped suddenly down, so suddenly that Alice had not a moment to think about stopping herself before she found herself falling down a very deep well.</p>
+      <p>Either the well was very deep, or she fell very slowly, for she had plenty of time as she went down to look about her and to wonder what was going to happen next. She looked at the sides of the well, and noticed that they were filled with cupboards and book-shelves; here and there she saw maps and pictures hung upon pegs.</p>
+      <p>Down, down, down. Would the fall never come to an end? Alice wondered how many miles she had fallen and whether she might come out among the people who walked with their heads downward. There was nothing else to do, so she soon began talking again about Dinah, her cat.</p>
+      <p>She was dozing off when suddenly, thump! thump! down she came upon a heap of sticks and dry leaves, and the fall was over. Alice jumped to her feet. Before her was another long passage, and the White Rabbit was still in sight, hurrying down it.</p>
+    </div>
+  </section>
+  <section class="chapter">
+    <h1>Chapter II: The Pool of Tears</h1>
+    <div class="chapter-page">
+      <p>"Curiouser and curiouser!" cried Alice; "now I'm opening out like the largest telescope that ever was! Good-bye, feet!" For when she looked down at her feet, they seemed to be almost out of sight, they were getting so far off.</p>
+      <p>Just then her head struck against the roof of the hall: in fact she was now more than nine feet high, and she at once took up the little golden key and hurried off to the garden door.</p>
+      <p>Poor Alice! It was as much as she could do, lying down on one side, to look through into the garden with one eye; but to get through was more hopeless than ever. She sat down and began to cry again.</p>
+      <p>She went on shedding gallons of tears, until there was a large pool all round her, about four inches deep and reaching half down the hall. After a time she heard a little pattering of feet in the distance, and hastily dried her eyes to see what was coming.</p>
+    </div>
+    <div class="chapter-page">
+      <p>It was the White Rabbit returning, splendidly dressed, with a pair of white kid gloves in one hand and a large fan in the other. Alice began, in a low, timid voice, "If you please, sir--" The Rabbit started violently, dropped the gloves and the fan, and hurried away into the darkness.</p>
+      <p>Alice took up the fan and gloves. "Dear, dear! How queer everything is today! And yesterday things went on just as usual. I wonder if I've been changed in the night?"</p>
+      <p>As she said these words her foot slipped, and in another moment, splash! she was up to her chin in salt water. She soon made out that she was in the pool of tears which she had wept when she was nine feet high.</p>
+      <p>Just then she heard something splashing about in the pool a little way off. At first she thought it must be a walrus or hippopotamus, but then she remembered how small she was now, and soon made out that it was only a mouse that had slipped in like herself.</p>
+    </div>
+  </section>
+  <section class="chapter">
+    <h1>Chapter III: A Caucus-Race and a Long Tale</h1>
+    <div class="chapter-page">
+      <p>They were indeed a queer-looking party that assembled on the bank--the birds with draggled feathers, the animals with their fur clinging close to them, and all dripping wet, cross, and uncomfortable.</p>
+      <p>The first question of course was how to get dry again. They had a consultation about this, and after a few minutes it seemed quite natural to Alice to find herself talking familiarly with them, as if she had known them all her life.</p>
+      <p>At last the Mouse, who seemed to be a person of authority among them, called out, "Sit down, all of you, and listen to me! I'll soon make you dry enough!" They all sat down at once, in a large ring, with the Mouse in the middle.</p>
+      <p>The Mouse began the driest thing it knew, a history of William the Conqueror, but Alice remained as wet as ever. In that case, said the Dodo solemnly, the meeting ought to adopt more energetic remedies.</p>
+    </div>
+    <div class="chapter-page">
+      <p>"What I was going to say," said the Dodo in an offended tone, "was that the best thing to get us dry would be a Caucus-race." Alice asked what a Caucus-race was. The Dodo replied that the best way to explain it was to do it.</p>
+      <p>First it marked out a race-course, in a sort of circle--the exact shape did not matter--and then all the party were placed along the course, here and there. There was no "One, two, three, and away," but they began running when they liked and left off when they liked.</p>
+      <p>When they had been running half an hour or so, and were quite dry again, the Dodo suddenly called out, "The race is over!" They all crowded round it, panting, and asking, "But who has won?"</p>
+      <p>At last the Dodo said, "Everybody has won, and all must have prizes." Alice pulled a box of comfits from her pocket and handed them round. There was exactly one apiece, all round.</p>
+    </div>
+  </section>
+</article>`;
 
 export const galleryExamples = [
   {
@@ -40,13 +114,66 @@ export const galleryExamples = [
     shortTitle: "Breaks & fragments",
     summary: "Forced transitions, protected boxes, widows, and orphans.",
     support: "match",
-    features: ["break-before", "break-inside", "widows", "orphans"],
+    features: ["break-before", "break-after", "break-inside", "widows", "orphans"],
     compareNotes: [
       "Colored labels make forced page boundaries easy to compare.",
       "Paged.js fragment coordinates are reused by the PDF writer."
     ],
-    html: `<section><p class="eyebrow">Fragmentation / 02</p><h1>Opening sequence</h1>${prose}<aside><strong>Keep this note together.</strong>${prose}</aside></section><section class="new-page"><p class="eyebrow">Forced page</p><h1>Second movement</h1>${prose}${prose}</section><section class="new-page"><h1>Closing page</h1>${prose}</section>`,
-    css: `@page { size: A5; margin: 16mm; @bottom-center { content: counter(page); } } ${baseCss} section { widows: 3; orphans: 3; } .new-page { break-before: page; } aside { padding: 6mm; break-inside: avoid; border: 1mm solid #dd704f; background: #fff0e8; }`
+    html: `<section class="opening-sequence">
+  <p class="eyebrow">Fragmentation / 02</p>
+  <h1>Opening sequence</h1>
+  ${fragmentationLead}
+  <aside class="keep-together">
+    <strong>Keep this note together: <code>break-inside: avoid</code></strong>
+    <p>The border, heading, and all three paragraphs belong to one protected fragment.</p>
+    <p>Paged.js moves the complete box to the next page when the remaining space is too small.</p>
+    <p>The rule prevents a split inside this box; it does not prevent the box itself from moving.</p>
+  </aside>
+</section>
+<section class="second-movement">
+  <p class="rule-label break-before-page"><strong><code>break-before: page</code></strong> This paragraph starts the second movement on a new page.</p>
+  <h1>Second movement</h1>
+  ${prose}${prose}
+  <p class="rule-label break-after-page"><strong><code>break-after: page</code></strong> This paragraph ends the current page, so the closing section starts on the next one.</p>
+</section>
+<section class="closing-page">
+  <p class="eyebrow">Following break-after / 03</p>
+  <h1>Closing page</h1>
+  ${prose}
+</section>`,
+    css: `@page {
+  size: A5;
+  margin: 16mm;
+  @bottom-center { content: counter(page); }
+}
+${baseCss}
+p {
+  widows: 3;
+  orphans: 3;
+}
+.keep-together {
+  break-inside: avoid;
+  padding: 6mm;
+  border: 1mm solid #dd704f;
+  background: #fff0e8;
+}
+.keep-together p:last-child {
+  margin-bottom: 0;
+}
+.break-before-page {
+  break-before: page;
+}
+.break-after-page {
+  break-after: page;
+}
+.rule-label {
+  padding: 4mm;
+  border-left: 1.5mm solid #17748b;
+  background: #e8f3f4;
+}
+code {
+  font: 700 9pt Consolas, monospace;
+}`
   },
   {
     id: "named-pages",
@@ -90,8 +217,8 @@ export const galleryExamples = [
       "Solid cell fills and borders are supported.",
       "Separate borders avoid collapsed-border conflict resolution."
     ],
-    html: `<article><p class="eyebrow">Rich content / 05</p><h1>Survey register</h1><table><thead><tr><th>Station</th><th>Habitat</th><th>Index</th></tr></thead><tbody>${Array.from({ length: 24 }, (_, index) => `<tr><td>ST-${String(index + 1).padStart(2, "0")}</td><td>${["Salt marsh", "Mudflat", "Reed bed"][index % 3]}</td><td>${72 + (index % 19)}</td></tr>`).join("")}</tbody></table></article>`,
-    css: `@page { size: A5; margin: 15mm; } ${baseCss} table { width: 100%; border-spacing: 2px; font: 9pt Arial; } thead { display: table-header-group; } tr { break-inside: avoid; } th, td { padding: 3mm; border: 1px solid #9eb1b7; text-align: left; } th { background: #123f50; color: white; } tbody tr:nth-child(even) td { background: #e8f3f4; }`
+    html: `<article class="table-report"><table><caption><p class="eyebrow">Rich content / 05</p><h1>Survey register</h1></caption><thead><tr><th>Station</th><th>Habitat</th><th>Index</th></tr></thead><tbody>${Array.from({ length: 24 }, (_, index) => `<tr><td>ST-${String(index + 1).padStart(2, "0")}</td><td>${["Salt marsh", "Mudflat", "Reed bed"][index % 3]}</td><td>${72 + (index % 19)}</td></tr>`).join("")}</tbody></table></article>`,
+    css: `@page { size: A5; margin: 15mm; } ${baseCss} .table-report caption { caption-side: top; padding: 0 0 5mm; text-align: left; } .table-report caption > .eyebrow { margin-bottom: 2mm; } .table-report caption > h1 { margin: 0; } .table-report table { width: 100%; border-spacing: 2px; break-inside: auto; font: 9pt Arial; } .table-report table[data-split-from] caption { display: none; } .table-report tbody { break-inside: auto; } thead { display: table-header-group; } tr { break-inside: avoid; } th, td { padding: 2.5mm; border: 1px solid #9eb1b7; text-align: left; } th { background: #123f50; color: white; } tbody tr:nth-child(even) td { background: #e8f3f4; }`
   },
   {
     id: "media-links",
@@ -111,32 +238,56 @@ export const galleryExamples = [
   {
     id: "running-content",
     group: "Generated content",
-    title: "Running headers & counters",
-    shortTitle: "Running content",
-    summary: "Chapter strings are reused in left and right page margins.",
+    title: "Long-form chapters & page-number reset",
+    shortTitle: "Chapters & numbering",
+    summary:
+      "A public-domain story demonstrates changing running heads and Roman-to-Arabic page numbering.",
     support: "partial",
-    features: ["string-set", "string()", ":left", ":right"],
+    features: [
+      "long-form flow",
+      "string-set",
+      "string()",
+      "counter-reset",
+      "counter styles"
+    ],
     compareNotes: [
-      "The HTML pane is authoritative for margin boxes.",
+      "The Paged.js HTML pane shows changing chapter heads and the numbering restart.",
       "Generated running text and counters may be absent from the PDF."
     ],
-    html: `<article><section class="chapter"><h1>Coast</h1>${prose}${prose}${prose}</section><section class="chapter"><h1>Forest</h1>${prose}${prose}${prose}</section><section class="chapter"><h1>High ground</h1>${prose}${prose}</section></article>`,
-    css: `@page { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page) " of " counter(pages); } } @page :left { @top-left { content: string(chapter); } } @page :right { @top-right { content: string(chapter); } } ${baseCss} .chapter { break-before: page; } .chapter:first-child { break-before: auto; } .chapter h1 { string-set: chapter content(text); }`
+    fixedPageMarginSelectors: ["cover"],
+    html: aliceLongFormHtml,
+    css: `@page cover { size: A5; margin: 0; } @page front-matter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, lower-roman); font: 8pt Arial; } } @page chapter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, decimal); font: 8pt Arial; } } @page chapter:left { @top-left { content: string(chapter); font: 700 7pt Arial; } } @page chapter:right { @top-right { content: string(chapter); font: 700 7pt Arial; } } ${baseCss} body { font-size: 11.5pt; line-height: 1.6; } .book h1 { font-size: 22pt; } .cover-page { width: 148mm; height: 210mm; margin: 0; padding: 0; page: cover; break-after: page; } .cover-page .book-cover { display: block; width: 148mm; height: 210mm; object-fit: cover; } .front-matter { page: front-matter; } .title-page { break-after: page; padding-top: 25mm; } .book-author { color: #c9472d; font: 700 13pt Arial; } .book-deck { margin-top: 14mm; font-size: 13pt; line-height: 1.4; } .source-note, .reader-note { margin-top: 18mm; color: #536871; font: 8pt/1.5 Arial; } .source-note a { color: #126c86; } .contents-page { break-before: page; } .contents { margin: 12mm 0 0; padding: 0; list-style-position: inside; font: 700 12pt/2 Arial; } .chapter { page: chapter; break-before: page; } .chapter-start { counter-reset: page 1; } .chapter h1 { string-set: chapter content(text); } .chapter p { margin-bottom: 3mm; }`
   },
   {
     id: "footnotes",
     group: "Generated content",
     title: "Footnotes",
     shortTitle: "Footnotes",
-    summary: "Paged.js moves note bodies and generates calls and markers.",
+    summary: "Three pages compare decimal, parenthesized, and bracketed footnote styles.",
     support: "partial",
-    features: ["float: footnote", "@footnote", "footnote call", "marker"],
+    features: ["float: footnote", "@footnote", "decimal markers", "(1) markers", "[1] markers"],
     compareNotes: [
-      "Moved footnote body text can translate.",
-      "Generated calls, markers, and internal navigation are not guaranteed."
+      "Each marker style gets its own page with the relevant CSS declaration.",
+      "Calls, markers, and moved note bodies remain selectable PDF text."
     ],
-    html: `<article><p class="eyebrow">Generated content / 08</p><h1>Reading with notes</h1><p>Notes stay close to their claims.<span class="footnote">A footnote moves into the page footnote area.</span> Paged.js creates its call automatically.</p>${prose}<p>A second note is numbered automatically.<span class="footnote">Calls and markers are generated content.</span></p></article>`,
-    css: `@page { size: A5; margin: 18mm 16mm 24mm; @footnote { float: bottom; border-top: 1px solid #17748b; padding-top: 3mm; } } ${baseCss} .footnote { float: footnote; color: #50656e; font: 8pt Arial; } ::footnote-call { content: counter(footnote); color: #c9472d; } ::footnote-marker { content: counter(footnote) ". "; color: #c9472d; }`
+    html: `<article class="footnote-style-page"><p class="eyebrow">Footnote styles / 01</p><h1>Decimal markers</h1><p>The default editorial style uses plain numbers.<span class="footnote footnote-decimal">A decimal footnote is concise and familiar.</span> Calls are generated where the note occurs.<span class="footnote footnote-decimal">The note body moves into the page footnote area.</span></p><h2>CSS declaration</h2><pre class="css-sample"><code>.footnote { float: footnote; }
+.footnote-decimal::footnote-call {
+  content: attr(data-footnote-label);
+}
+.footnote-decimal::footnote-marker {
+  content: attr(data-footnote-label) " ";
+}</code></pre></article><article class="footnote-style-page"><p class="eyebrow">Footnote styles / 02</p><h1>Parenthesized markers</h1><p>Round brackets create a softer reference mark. The prepared data-footnote-label supplies the complete label.<span class="footnote footnote-parenthesized">Parentheses visually separate the number from the sentence.</span> The same syntax controls call and marker.<span class="footnote footnote-parenthesized">Both labels stay selectable in the generated PDF.</span></p><h2>CSS declaration</h2><pre class="css-sample"><code>.footnote-parenthesized::footnote-call {
+  content: attr(data-footnote-label);
+}
+.footnote-parenthesized::footnote-marker {
+  content: attr(data-footnote-label) " ";
+}</code></pre></article><article class="footnote-style-page"><p class="eyebrow">Footnote styles / 03</p><h1>Bracketed markers</h1><p>Square brackets provide a compact technical style. The prepared data-footnote-label includes both brackets.<span class="footnote footnote-bracketed">Bracketed calls work well in documentation.</span> Color can distinguish the variant.<span class="footnote footnote-bracketed">Square brackets provide a compact alternative style.</span></p><h2>CSS declaration</h2><pre class="css-sample"><code>.footnote-bracketed::footnote-call {
+  content: attr(data-footnote-label);
+}
+.footnote-bracketed::footnote-marker {
+  content: attr(data-footnote-label) " ";
+}</code></pre></article>`,
+    css: `@page { size: A5; margin: 18mm 16mm 24mm; @top-left { content: string(footnote-style-title); color: #c9472d; font: 700 8pt Arial; letter-spacing: .12em; text-transform: uppercase; } @footnote { float: bottom; border-top: 1px solid #17748b; padding-top: 3mm; } } ${baseCss} .footnote-style-page { break-after: page; } .footnote-style-page:last-child { break-after: auto; } .footnote-style-page > .eyebrow { position: absolute; width: 1px; height: 1px; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; string-set: footnote-style-title content(text); } .footnote { float: footnote; color: #50656e; font: 8pt Arial; } .css-sample { margin-top: 4mm; padding: 4mm; border-left: 1mm solid #d8a52d; background: #f5f1e8; color: #283b43; white-space: pre-wrap; font: 7.5pt/1.45 Consolas, monospace; } .footnote-decimal::footnote-call { content: attr(data-footnote-label); color: #283b43; } .footnote-decimal::footnote-marker { content: attr(data-footnote-label) " "; color: #283b43; } .footnote-parenthesized::footnote-call { content: attr(data-footnote-label); color: #c9472d; } .footnote-parenthesized::footnote-marker { content: attr(data-footnote-label) " "; color: #c9472d; } .footnote-bracketed::footnote-call { content: attr(data-footnote-label); color: #17748b; } .footnote-bracketed::footnote-marker { content: attr(data-footnote-label) " "; color: #17748b; } .paged-pdf-footnote-call::after, .paged-pdf-footnote-note::before { content: none !important; } .paged-pdf-footnote-note::footnote-marker { content: none !important; } .paged-pdf-footnote-call-label, .paged-pdf-footnote-note-label { font-weight: 700; } .footnote-decimal .paged-pdf-footnote-call-label, .footnote-decimal .paged-pdf-footnote-note-label { color: #283b43; } .footnote-parenthesized .paged-pdf-footnote-call-label, .footnote-parenthesized .paged-pdf-footnote-note-label { color: #c9472d; } .footnote-bracketed .paged-pdf-footnote-call-label, .footnote-bracketed .paged-pdf-footnote-note-label { color: #17748b; }`
   },
   {
     id: "cross-references",
@@ -155,18 +306,19 @@ export const galleryExamples = [
   },
   {
     id: "difference-lab",
+    renderMode: "hybrid",
     group: "Known differences",
     title: "Visual effects difference lab",
     shortTitle: "Difference lab",
     summary: "A stress sheet exposes unsupported CSS instead of hiding it.",
-    support: "pagedjs-only",
+    support: "match",
     features: ["gradients", "shadows", "radius", "transforms", "SVG"],
     compareNotes: [
-      "Gradients, shadows, transforms, SVG, radius, and dashed borders are outside v0.1.",
-      "This sheet shows how the bounded primitive renderer degrades."
+      "Hybrid mode rasterizes the visual page while preserving selectable text and links.",
+      "Use vector mode when small files and native PDF drawing are more important."
     ],
-    html: `<article><p class="eyebrow">Known differences / 10</p><h1>Effects stress sheet</h1><div class="effects"><div class="gradient">Gradient</div><div class="shadow">Shadow</div><div class="rounded">Rounded</div><div class="dashed">Dashed</div><div class="rotated">Rotated</div><div class="faded">Opacity</div></div><svg viewBox="0 0 160 60" aria-label="Inline SVG wave"><path d="M0 35 Q40 5 80 35 T160 35" fill="none" stroke="#17748b" stroke-width="8"/></svg></article>`,
-    css: `@page { size: A5; margin: 16mm; } ${baseCss} .effects { display: grid; margin-top: 8mm; grid-template-columns: 1fr 1fr; gap: 6mm; } .effects div { display: grid; min-height: 28mm; place-items: center; font: 700 11pt Arial; } .gradient { background: linear-gradient(135deg, #17748b, #f0ae4c); color: white; } .shadow { box-shadow: 0 4mm 8mm #123f5066; } .rounded { border-radius: 12mm; background: #e8f3f4; } .dashed { border: 2mm dashed #dd704f; } .rotated { transform: rotate(-5deg); background: #123f50; color: white; } .faded { opacity: .35; background: #dd704f; } svg { width: 100%; margin-top: 10mm; }`
+    html: `<article><p class="eyebrow">Known differences / 10</p><h1>Effects stress sheet</h1><div class="effects"><div class="gradient">Gradient</div><div class="shadow">Shadow</div><div class="rounded">Rounded</div><div class="dashed">Dashed</div><div class="rotated">Rotated</div><div class="faded"><span>Opacity</span></div></div><svg viewBox="0 0 160 60" aria-label="Inline SVG wave"><path d="M0 35 Q40 5 80 35 T160 35" fill="none" stroke="#17748b" stroke-width="8"/></svg></article>`,
+    css: `@page { size: A5; margin: 16mm; } ${baseCss} .effects { display: grid; margin-top: 8mm; grid-template-columns: 1fr 1fr; gap: 6mm; } .effects div { display: grid; min-height: 28mm; place-items: center; font: 700 11pt Arial; } .gradient { background: linear-gradient(135deg, #17748b, #f0ae4c); color: white; } .shadow { box-shadow: 0 4mm 8mm #123f5066; } .rounded { border-radius: 12mm; background: #e8f3f4; } .dashed { border: 2mm dashed #dd704f; } .rotated { transform: rotate(-5deg); background: #123f50; color: white; } .faded { position: relative; overflow: visible; opacity: .45; background: #dd704f; } .faded::before { content: ""; position: absolute; z-index: 0; width: 65%; height: 65%; transform: rotate(12deg); background: #17748b; } .faded span { position: relative; z-index: 1; padding: 1.5mm 2.5mm; background: #fff; color: #123f50; } svg { width: 100%; margin-top: 10mm; }`
   }
 ] as const satisfies readonly GalleryExample[];
 

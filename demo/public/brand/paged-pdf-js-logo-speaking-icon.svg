@@ -1,0 +1,81 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="512"
+  height="512"
+  viewBox="0 0 512 512"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Paged PDF JS — HTML to vector PDF</title>
+  <desc id="description">
+    An HTML document flows through a Bézier curve with vector anchor points
+    into a PDF document, representing conversion without rasterization.
+  </desc>
+
+  <!-- HTML source document -->
+  <path
+    d="M48 100c0-20 16-36 36-36h166l54 54v218c0 20-16 36-36 36H84c-20 0-36-16-36-36z"
+    fill="#08303C"
+  />
+  <path d="M250 64v38c0 13 10 23 23 23h31z" fill="#2BB7CF" />
+  <rect x="78" y="101" width="138" height="42" rx="21" fill="#F5A623" />
+  <text
+    x="147"
+    y="131"
+    fill="#08303C"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="26"
+    font-weight="800"
+    text-anchor="middle"
+  >HTML</text>
+  <path
+    d="M112 203l-32 29 32 29M176 203l32 29-32 29M158 184l-28 96"
+    fill="none"
+    stroke="#FDFBF7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="18"
+  />
+
+  <!-- Paginated PDF output -->
+  <path
+    d="M244 160c0-20 16-36 36-36h146l54 54v270H280c-20 0-36-16-36-36z"
+    fill="#2BB7CF"
+    opacity=".55"
+  />
+  <path
+    d="M220 142c0-20 16-36 36-36h146l62 62v244c0 20-16 36-36 36H256c-20 0-36-16-36-36z"
+    fill="#FDFBF7"
+    stroke="#08303C"
+    stroke-width="16"
+  />
+  <path d="M402 106v42c0 13 10 23 23 23h39z" fill="#E75252" />
+  <rect x="260" y="310" width="166" height="70" rx="20" fill="#E75252" />
+  <text
+    x="343"
+    y="361"
+    fill="#FFFFFF"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="50"
+    font-weight="800"
+    letter-spacing="4"
+    text-anchor="middle"
+  >PDF</text>
+
+  <!-- Vector-only conversion path -->
+  <path
+    d="M174 319C220 270 266 267 323 283"
+    fill="none"
+    stroke="#F5A623"
+    stroke-linecap="round"
+    stroke-width="18"
+  />
+  <path d="M307 262l35 28-42 11z" fill="#F5A623" />
+  <path d="M174 319l36-49M323 283l-17-52" stroke="#08303C" stroke-width="5" />
+  <g fill="#FDFBF7" stroke="#08303C" stroke-width="6">
+    <circle cx="174" cy="319" r="12" />
+    <circle cx="210" cy="270" r="10" />
+    <circle cx="306" cy="231" r="10" />
+    <circle cx="323" cy="283" r="12" />
+  </g>
+</svg>

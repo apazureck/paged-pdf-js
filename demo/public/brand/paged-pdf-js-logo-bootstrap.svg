@@ -1,0 +1,47 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="512"
+  height="512"
+  viewBox="0 0 512 512"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Paged PDF JS logo — Bootstrap-inspired filled concept</title>
+  <desc id="description">
+    A bold filled PDF document in front of two paginated sheets, combining a
+    file-type icon with browser-based page layout.
+  </desc>
+
+  <path
+    d="M104 82h216l82 82v238c0 22-18 40-40 40H104c-22 0-40-18-40-40V122c0-22 18-40 40-40z"
+    fill="#9BE5ED"
+  />
+  <path
+    d="M84 112h216l82 82v238c0 22-18 40-40 40H84c-22 0-40-18-40-40V152c0-22 18-40 40-40z"
+    fill="#27B6CF"
+  />
+  <path
+    d="M116 54h206l110 110v240c0 30-24 54-54 54H116c-30 0-54-24-54-54V108c0-30 24-54 54-54z"
+    fill="#08303C"
+  />
+  <path d="M322 54v80c0 17 13 30 30 30h80z" fill="#FDFBF7" />
+
+  <rect x="122" y="198" width="248" height="22" rx="11" fill="#9BE5ED" />
+  <rect x="122" y="244" width="184" height="22" rx="11" fill="#9BE5ED" />
+
+  <rect x="98" y="306" width="300" height="104" rx="26" fill="#E75252" />
+  <text
+    x="248"
+    y="380"
+    fill="#FFFFFF"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="72"
+    font-weight="800"
+    letter-spacing="8"
+    text-anchor="middle"
+  >PDF</text>
+
+  <circle cx="145" cy="436" r="10" fill="#FDFBF7" />
+  <circle cx="177" cy="436" r="10" fill="#9BE5ED" />
+  <circle cx="209" cy="436" r="10" fill="#27B6CF" />
+</svg>

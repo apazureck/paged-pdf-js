@@ -1,3 +1,5 @@
+import type { RenderMode } from "../src/types.js";
+
 export type ExampleGroup =
   | "Page construction"
   | "Fragmentation"
@@ -18,4 +20,6 @@ export interface GalleryExample {
   readonly compareNotes: readonly string[];
   readonly html: string;
   readonly css: string;
+  readonly fixedPageMarginSelectors?: readonly string[];
+  readonly renderMode?: RenderMode;
 }

@@ -1,0 +1,46 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="512"
+  height="512"
+  viewBox="0 0 512 512"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Paged PDF JS logo — Tabler-inspired outline concept</title>
+  <desc id="description">
+    An outlined stack of paginated documents with a folded corner and a
+    monogram P, combining paged-media and PDF imagery.
+  </desc>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M104 140V116c0-20 16-36 36-36h194l74 74v246c0 20-16 36-36 36h-28"
+      stroke="#27B6CF"
+      stroke-width="24"
+      opacity=".72"
+    />
+    <path
+      d="M78 178v-26c0-20 16-36 36-36h194l74 74v246c0 20-16 36-36 36H114c-20 0-36-16-36-36z"
+      fill="#FDFBF7"
+      stroke="#08303C"
+      stroke-width="26"
+    />
+    <path
+      d="M308 116v50c0 14 11 24 24 24h50"
+      fill="#9BE5ED"
+      stroke="#08303C"
+      stroke-width="26"
+    />
+
+    <path
+      d="M158 334V220h72c39 0 64 21 64 55s-25 55-64 55h-72"
+      stroke="#08303C"
+      stroke-width="30"
+    />
+    <path d="M158 278h72" stroke="#27B6CF" stroke-width="22" />
+    <path d="M158 334v50" stroke="#08303C" stroke-width="30" />
+
+    <path d="M254 384h54" stroke="#27B6CF" stroke-width="18" />
+    <path d="M334 384h12" stroke="#E75252" stroke-width="18" />
+  </g>
+</svg>

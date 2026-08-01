@@ -11,3 +11,13 @@ export function cssPixelsToPoints(cssPixels: number): number {
   }
   return cssPixels * PDF_POINTS_PER_CSS_PIXEL;
 }
+
+export function cssLengthToPoints(cssPixels: number): number {
+  if (!Number.isFinite(cssPixels)) {
+    throw new PagedPdfError(
+      "INVALID_PAGE_SIZE",
+      "CSS length values must be finite."
+    );
+  }
+  return cssPixels * PDF_POINTS_PER_CSS_PIXEL;
+}

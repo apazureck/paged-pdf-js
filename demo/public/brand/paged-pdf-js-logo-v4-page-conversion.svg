@@ -1,0 +1,45 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1280"
+  height="420"
+  viewBox="0 0 1280 420"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">Paged PDF JS — page conversion mark</title>
+  <desc id="description">
+    A page contains an HTML code tag, a conversion arrow, and a red PDF label.
+    The lockup describes PDF objects, selectable text, vector paths, and no canvas.
+  </desc>
+
+  <!-- One-page conversion mark -->
+  <g transform="translate(54 42)">
+    <path d="M62 22h190l76 76v238H62c-24 0-44-20-44-44V66c0-24 20-44 44-44z" fill="#2BB7CF" opacity=".48"/>
+    <path d="M44 0h190l76 76v216c0 24-20 44-44 44H44c-24 0-44-20-44-44V44C0 20 20 0 44 0z" fill="#FDFBF7" stroke="#08303C" stroke-width="16"/>
+    <path d="M234 0v52c0 14 11 25 25 25h51z" fill="#2BB7CF"/>
+
+    <rect x="32" y="56" width="130" height="76" rx="22" fill="#08303C"/>
+    <text x="97" y="108" fill="#FDFBF7" font-family="Arial, Helvetica, sans-serif" font-size="43" font-weight="800" text-anchor="middle">&lt;/&gt;</text>
+
+    <path d="M126 205C165 158 213 159 249 201" fill="none" stroke="#F5A623" stroke-linecap="round" stroke-width="16"/>
+    <path d="M235 183l32 27-40 8z" fill="#F5A623"/>
+    <circle cx="126" cy="205" r="10" fill="#FDFBF7" stroke="#08303C" stroke-width="6"/>
+    <circle cx="249" cy="201" r="10" fill="#FDFBF7" stroke="#08303C" stroke-width="6"/>
+
+    <rect x="132" y="232" width="146" height="66" rx="20" fill="#E75252"/>
+    <text x="205" y="280" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="800" letter-spacing="3" text-anchor="middle">PDF</text>
+  </g>
+
+  <text x="442" y="136" fill="#08303C" font-family="Arial, Helvetica, sans-serif" font-size="76" font-weight="800" letter-spacing="-2">paged-pdf-js</text>
+  <text x="446" y="211" fill="#E75252" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="800" letter-spacing="1">HTML + CSS → PDF OBJECTS</text>
+  <line x1="446" y1="245" x2="1212" y2="245" stroke="#2BB7CF" stroke-width="8"/>
+
+  <g transform="translate(446 279)">
+    <rect width="262" height="56" rx="28" fill="#08303C"/>
+    <text x="131" y="37" fill="#FDFBF7" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" text-anchor="middle">SELECTABLE TEXT</text>
+    <rect x="278" width="248" height="56" rx="28" fill="#2BB7CF"/>
+    <text x="402" y="37" fill="#08303C" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" text-anchor="middle">VECTOR PATHS</text>
+    <rect x="542" width="190" height="56" rx="28" fill="#E75252"/>
+    <text x="637" y="37" fill="#FFFFFF" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" text-anchor="middle">NO CANVAS</text>
+  </g>
+</svg>

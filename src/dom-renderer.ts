@@ -1,3 +1,4 @@
+import { parse, walk } from "css-tree";
 import { parseCssColor } from "./css-color.js";
 import type {
   DrawCommand,
@@ -74,12 +75,15 @@ async function consumeTextOperation(
 }
 
 function measurePage(element: HTMLElement): Rectangle {
-  const bounds = element.getBoundingClientRect();
-  const style = getComputedStyle(element);
+  const pagebox = element.matches(".pagedjs_pagebox")
+    ? element
+    : (element.querySelector<HTMLElement>(".pagedjs_pagebox") ?? element);
+  const bounds = pagebox.getBoundingClientRect();
+  const style = getComputedStyle(pagebox);
   const width =
-    bounds.width || element.offsetWidth || Number.parseFloat(style.width);
+    bounds.width || pagebox.offsetWidth || Number.parseFloat(style.width);
   const height =
-    bounds.height || element.offsetHeight || Number.parseFloat(style.height);
+    bounds.height || pagebox.offsetHeight || Number.parseFloat(style.height);
   if (
     !Number.isFinite(width) ||
     width <= 0 ||
@@ -194,26 +198,167 @@ function transformedText(text: string, transform: string): string {
   return text;
 }
 
+function staticGeneratedContent(content: string): string | undefined {
+  let text = "";
+  let supported = true;
+  try {
+    const value = parse(content, { context: "value" });
+    walk(value, (node) => {
+      if (node.type === "Value") {
+        return;
+      }
+      if (node.type === "String" && node.value !== undefined) {
+        text += node.value;
+        return;
+      }
+      supported = false;
+    });
+  } catch {
+    return undefined;
+  }
+  return supported && text.length > 0 ? text : undefined;
+}
+
+function generatedTextWidth(
+  text: string,
+  style: CSSStyleDeclaration
+): number | undefined {
+  try {
+    const context = document.createElement("canvas").getContext("2d");
+    if (context === null) {
+      return undefined;
+    }
+    context.font =
+      style.font ||
+      `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const letterSpacing = Number.parseFloat(style.letterSpacing);
+    const extraSpacing = Number.isFinite(letterSpacing)
+      ? Math.max(0, Array.from(text).length - 1) * letterSpacing
+      : 0;
+    return context.measureText(text).width + extraSpacing;
+  } catch {
+    return undefined;
+  }
+}
+
+function generatedTextX(
+  bounds: Rectangle,
+  text: string,
+  style: CSSStyleDeclaration
+): number {
+  if (!["center", "right", "end"].includes(style.textAlign)) {
+    return bounds.left;
+  }
+  const width = generatedTextWidth(text, style);
+  if (width === undefined) {
+    return bounds.left;
+  }
+  return style.textAlign === "center"
+    ? bounds.left + (bounds.width - width) / 2
+    : bounds.left + bounds.width - width;
+}
+
+function generatedMarginTextCommand(
+  element: HTMLElement,
+  page: Rectangle
+): DrawCommand | undefined {
+  const style = getComputedStyle(element, "::after");
+  const content = staticGeneratedContent(style.content);
+  const bounds = relativeRectangle(element.getBoundingClientRect(), page);
+  if (
+    content === undefined ||
+    bounds === undefined ||
+    style.display === "none" ||
+    style.visibility === "hidden" ||
+    Number.parseFloat(style.opacity || "1") <= 0
+  ) {
+    return undefined;
+  }
+
+  const text = transformedText(content, style.textTransform);
+  return {
+    kind: "text",
+    text,
+    x: generatedTextX(bounds, text, style),
+    y: bounds.top,
+    fontFamily: fontFamily(style),
+    fontStyle: fontStyle(style),
+    fontSize: Number.parseFloat(style.fontSize) || 16,
+    letterSpacing: Number.parseFloat(style.letterSpacing) || 0,
+    color: parseCssColor(style.color) ?? [0, 0, 0]
+  };
+}
+
+function generatedMarginTextCommands(
+  root: HTMLElement,
+  page: Rectangle
+): readonly DrawCommand[] {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(".pagedjs_margin-content")
+  ).flatMap((element) => {
+    const command = generatedMarginTextCommand(element, page);
+    return command === undefined ? [] : [command];
+  });
+}
+
 function backgroundCommands(
   element: Element,
   page: Rectangle
 ): readonly DrawCommand[] {
-  const color = parseCssColor(getComputedStyle(element).backgroundColor);
+  const style = getComputedStyle(element);
+  const color = parseCssColor(style.backgroundColor);
   if (color === undefined) {
     return [];
   }
-  return clientRectangles(element).flatMap((rectangle) => {
+  const cornerRadii = [
+    style.borderTopLeftRadius || style.borderRadius,
+    style.borderTopRightRadius || style.borderRadius,
+    style.borderBottomRightRadius || style.borderRadius,
+    style.borderBottomLeftRadius || style.borderRadius
+  ].map((value) => {
+    const [horizontal = "", vertical = horizontal] = value.trim().split(/\s+/u);
+    return {
+      x: Number.parseFloat(horizontal),
+      y: Number.parseFloat(vertical)
+    };
+  });
+  const firstRadius = cornerRadii[0];
+  const hasUniformRadius =
+    firstRadius !== undefined &&
+    firstRadius.x > 0 &&
+    firstRadius.y > 0 &&
+    cornerRadii.every(
+      (radius) =>
+        Number.isFinite(radius.x) &&
+        Number.isFinite(radius.y) &&
+        radius.x === firstRadius.x &&
+        radius.y === firstRadius.y
+    );
+  return clientRectangles(element).flatMap<DrawCommand>((rectangle) => {
     const relative = relativeRectangle(rectangle, page);
-    return relative === undefined
-      ? []
-      : [{
-          kind: "fill" as const,
-          x: relative.left,
-          y: relative.top,
-          width: relative.width,
-          height: relative.height,
-          color
-        }];
+    if (relative === undefined) {
+      return [];
+    }
+    if (hasUniformRadius) {
+      return [{
+        kind: "roundedFill",
+        x: relative.left,
+        y: relative.top,
+        width: relative.width,
+        height: relative.height,
+        radiusX: Math.min(firstRadius.x, relative.width / 2),
+        radiusY: Math.min(firstRadius.y, relative.height / 2),
+        color
+      }];
+    }
+    return [{
+      kind: "fill",
+      x: relative.left,
+      y: relative.top,
+      width: relative.width,
+      height: relative.height,
+      color
+    }];
   });
 }
 
@@ -281,6 +426,88 @@ function borderCommands(
   );
 }
 
+function columnRuleCommands(
+  element: Element,
+  page: Rectangle
+): readonly DrawCommand[] {
+  const style = getComputedStyle(element);
+  const ruleWidth = Number.parseFloat(style.columnRuleWidth);
+  const ruleColor = parseCssColor(style.columnRuleColor);
+  if (
+    style.columnRuleStyle !== "solid" ||
+    !Number.isFinite(ruleWidth) ||
+    ruleWidth <= 0 ||
+    ruleColor === undefined
+  ) {
+    return [];
+  }
+
+  const bounds = element.getBoundingClientRect();
+  const leftInset =
+    (Number.parseFloat(style.borderLeftWidth) || 0) +
+    (Number.parseFloat(style.paddingLeft) || 0);
+  const rightInset =
+    (Number.parseFloat(style.borderRightWidth) || 0) +
+    (Number.parseFloat(style.paddingRight) || 0);
+  const topInset =
+    (Number.parseFloat(style.borderTopWidth) || 0) +
+    (Number.parseFloat(style.paddingTop) || 0);
+  const bottomInset =
+    (Number.parseFloat(style.borderBottomWidth) || 0) +
+    (Number.parseFloat(style.paddingBottom) || 0);
+  const contentWidth = bounds.width - leftInset - rightInset;
+  const contentHeight = bounds.height - topInset - bottomInset;
+  if (contentWidth <= 0 || contentHeight <= 0) {
+    return [];
+  }
+
+  const parsedGap = Number.parseFloat(style.columnGap);
+  const gap = Number.isFinite(parsedGap)
+    ? parsedGap
+    : Number.parseFloat(style.fontSize) || 16;
+  const declaredCount = Number.parseInt(style.columnCount, 10);
+  const declaredWidth = Number.parseFloat(style.columnWidth);
+  const widthBasedCount = Number.isFinite(declaredWidth) && declaredWidth > 0
+    ? Math.max(1, Math.floor((contentWidth + gap) / (declaredWidth + gap)))
+    : undefined;
+  const columnCount = Number.isFinite(declaredCount) && declaredCount > 0
+    ? widthBasedCount === undefined
+      ? declaredCount
+      : Math.min(declaredCount, widthBasedCount)
+    : widthBasedCount ?? 1;
+  if (columnCount <= 1) {
+    return [];
+  }
+
+  const contentLeft = bounds.left + leftInset;
+  const contentTop = bounds.top + topInset;
+  const commands: DrawCommand[] = [];
+  for (let index = 1; index < columnCount; index += 1) {
+    const ruleCenter =
+      contentLeft + (index * (contentWidth + gap)) / columnCount - gap / 2;
+    const relative = relativeRectangle(
+      {
+        left: ruleCenter - ruleWidth / 2,
+        top: contentTop,
+        width: ruleWidth,
+        height: contentHeight
+      },
+      page
+    );
+    if (relative !== undefined) {
+      commands.push({
+        kind: "fill",
+        x: relative.left,
+        y: relative.top,
+        width: relative.width,
+        height: relative.height,
+        color: ruleColor
+      });
+    }
+  }
+  return commands;
+}
+
 function imageCommand(
   image: HTMLImageElement,
   page: Rectangle
@@ -298,6 +525,24 @@ function imageCommand(
     width: bounds.width,
     height: bounds.height
   };
+}
+
+interface TextFragment {
+  readonly text: string;
+  readonly start: number;
+  readonly end: number;
+}
+
+function* splitTextFragments(
+  text: string,
+  start: number
+): Generator<TextFragment> {
+  let offset = start;
+  for (const unit of text) {
+    const end = offset + unit.length;
+    yield { text: unit, start: offset, end };
+    offset = end;
+  }
 }
 
 async function addTextCommands(
@@ -340,20 +585,44 @@ async function addTextCommands(
         range.setEnd(textNode, start + text.length);
         const rectangles = Array.from(range.getClientRects());
         range.detach();
-        for (const rectangle of rectangles) {
-          await consumeTextOperation(budget, signal);
-          const relative = relativeRectangle(rectangle, page);
-          if (relative !== undefined) {
-            collector.add({
-              kind: "text",
-              text: transformedText(text, style.textTransform),
-              x: relative.left,
-              y: relative.top,
-              fontFamily: fontFamily(style),
-              fontStyle: fontStyle(style),
-              fontSize: Number.parseFloat(style.fontSize) || 16,
-              color
-            });
+        const fragments: Iterable<TextFragment> =
+          rectangles.length <= 1
+            ? [{ text, start, end: start + text.length }]
+            : splitTextFragments(text, start);
+
+        for (const fragment of fragments) {
+          let fragmentRectangles = rectangles;
+          if (rectangles.length > 1) {
+            await consumeTextOperation(budget, signal);
+            const fragmentRange = document.createRange();
+            fragmentRange.setStart(textNode, fragment.start);
+            fragmentRange.setEnd(textNode, fragment.end);
+            fragmentRectangles = Array.from(
+              fragmentRange.getClientRects()
+            ).slice(0, 1);
+            fragmentRange.detach();
+          }
+          for (const rectangle of fragmentRectangles) {
+            await consumeTextOperation(budget, signal);
+            const relative = relativeRectangle(rectangle, page);
+            if (relative !== undefined) {
+              const transformed =
+                style.textTransform === "capitalize" &&
+                fragment.start !== start
+                  ? fragment.text
+                  : transformedText(fragment.text, style.textTransform);
+              collector.add({
+                kind: "text",
+                text: transformed,
+                x: relative.left,
+                y: relative.top,
+                fontFamily: fontFamily(style),
+                fontStyle: fontStyle(style),
+                letterSpacing: Number.parseFloat(style.letterSpacing) || 0,
+                fontSize: Number.parseFloat(style.fontSize) || 16,
+                color
+              });
+            }
           }
         }
       }
@@ -413,6 +682,7 @@ export async function buildVectorPage(
 
   const collector = new CommandCollector();
   collector.addAll(backgroundCommands(root, page));
+  collector.addAll(columnRuleCommands(root, page));
   collector.addAll(borderCommands(root, page));
   for (const [index, element] of Array.from(elements).entries()) {
     if (index > 0 && index % YIELD_INTERVAL === 0) {
@@ -422,6 +692,7 @@ export async function buildVectorPage(
       continue;
     }
     collector.addAll(backgroundCommands(element, page));
+    collector.addAll(columnRuleCommands(element, page));
     collector.addAll(borderCommands(element, page));
     if (element instanceof HTMLImageElement) {
       const command = imageCommand(element, page);
@@ -430,6 +701,7 @@ export async function buildVectorPage(
       }
     }
   }
+  collector.addAll(generatedMarginTextCommands(root, page));
   await addTextCommands(root, page, collector, signal);
   addLinkCommands(root, page, collector);
   throwIfAborted(signal);

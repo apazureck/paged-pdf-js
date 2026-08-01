@@ -30,6 +30,22 @@ describe("public site release configuration", () => {
     expect(contents.join("\n")).toContain(canonicalSite);
   });
 
+  it("uses the paged-pdf.js feature lab brand consistently", async () => {
+    const [gallery, preview, demoReadme] = await Promise.all([
+      readProjectFile("demo/gallery.html"),
+      readProjectFile("demo/paged-preview.ts"),
+      readProjectFile("demo/README.md")
+    ]);
+    const brandedFiles = [gallery, preview, demoReadme].join("\n");
+
+    expect(gallery).toContain("<title>paged-pdf.js feature lab</title>");
+    expect(gallery).toContain(">paged-pdf.js feature lab</h1>");
+    expect(preview).toContain("paged-pdf.js feature lab");
+    expect(demoReadme).toContain("paged-pdf.js feature lab");
+    expect(brandedFiles).not.toContain("Paged.js feature lab");
+    expect(brandedFiles).not.toContain("paged-pdf-js feature lab");
+  });
+
   it("builds and smoke-tests the manual and browser download", async () => {
     const workflow = await readProjectFile(".github/workflows/deploy.yml");
 
@@ -59,15 +75,22 @@ describe("public site release configuration", () => {
     );
   });
 
-  it("supports legacy rollback and bounds server release retention", async () => {
-    const workflow = await readProjectFile(".github/workflows/deploy.yml");
+  it("uses a one-shot FTPS release and removes stale managed files", async () => {
+    const [workflow, uploader, extractor] = await Promise.all([
+      readProjectFile(".github/workflows/deploy.yml"),
+      readProjectFile("scripts/deploy_ftp.py"),
+      readProjectFile("deploy/ftp-extract-template.php")
+    ]);
 
-    expect(workflow).toContain(
-      "([a-f0-9]{40}|[a-f0-9]{40}-[0-9]+-[0-9]+)"
-    );
-    expect(workflow).toContain("trap cleanup_staging EXIT");
-    expect(workflow).toContain("tail -n +6");
-    expect(workflow).toContain('rm -r -- \\"\\$candidate\\"');
+    expect(workflow).toContain("python scripts/deploy_ftp.py demo-dist");
+    expect(uploader).toContain("finally:");
+    expect(uploader).toContain("ftps.delete(archive.name)");
+    expect(uploader).toContain("ftps.delete(script.name)");
+    expect(extractor).toContain("previousManagedFiles(__DIR__)");
+    expect(extractor).toContain("backupLiveFiles");
+    expect(extractor).toContain("rollbackRelease");
+    expect(extractor).toContain("@unlink($archivePath)");
+    expect(extractor).toContain("@unlink($scriptPath)");
   });
 
   it("pins every third-party workflow action to a commit", async () => {

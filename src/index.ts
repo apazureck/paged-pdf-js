@@ -8,5 +8,6 @@ export type {
   PagedPdfErrorCode,
   PdfMetadata,
   PdfResult,
-  ProgressPhase
+  ProgressPhase,
+  RenderMode
 } from "./types.js";

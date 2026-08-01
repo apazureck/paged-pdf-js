@@ -11,6 +11,17 @@ export interface FillCommand {
   readonly color: PdfColor;
 }
 
+export interface RoundedFillCommand {
+  readonly kind: "roundedFill";
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+  readonly radiusX: number;
+  readonly radiusY: number;
+  readonly color: PdfColor;
+}
+
 export interface TextCommand {
   readonly kind: "text";
   readonly text: string;
@@ -19,7 +30,9 @@ export interface TextCommand {
   readonly fontFamily: PdfFontFamily;
   readonly fontStyle: PdfFontStyle;
   readonly fontSize: number;
+  readonly letterSpacing: number;
   readonly color: PdfColor;
+  readonly opacity?: number;
 }
 
 export interface ImageCommand {
@@ -44,6 +57,7 @@ export type DrawCommand =
   | FillCommand
   | ImageCommand
   | LinkCommand
+  | RoundedFillCommand
   | TextCommand;
 
 export interface VectorPage {
