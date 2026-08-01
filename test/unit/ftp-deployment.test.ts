@@ -244,6 +244,26 @@ describe("FTP release workflow", () => {
     expect(stdout).not.toContain("sensitive-local-detail");
   });
 
+  it("prepares release controls while preserving PHP magic constants", async () => {
+    const source = [
+      "import tempfile",
+      "from pathlib import Path",
+      "from scripts.deploy_ftp import Configuration, create_controls, release_files",
+      "settings = Configuration('example.com', 21, 'user', 'password', '.', 'a' * 40)",
+      "with tempfile.TemporaryDirectory() as site, tempfile.TemporaryDirectory() as controls:",
+      "    root = Path(site)",
+      "    (root / 'downloads').mkdir()",
+      "    (root / 'index.html').write_text('index', encoding='utf-8')",
+      "    (root / 'manual.html').write_text('manual', encoding='utf-8')",
+      "    (root / 'downloads' / 'paged-pdf.min.js').write_text('bundle', encoding='utf-8')",
+      "    archive, script, token = create_controls(release_files(root), settings, Path(controls))",
+      "    print(archive.is_file(), script.is_file(), len(token))"
+    ].join("\n");
+    const { stdout } = await execFile("python", ["-c", source]);
+
+    expect(stdout.trim()).toBe("True True 64");
+  });
+
   it("rejects unsafe remote directories before making a connection", async () => {
     await expect(
       execFile("python", [uploaderPath, "--check-config"], {
