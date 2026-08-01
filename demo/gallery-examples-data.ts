@@ -43,7 +43,7 @@ const aliceLongFormHtml = `<article class="book">
       <p>There was nothing so very remarkable in that; nor did Alice think it so very much out of the way to hear the Rabbit say to itself, "Oh dear! Oh dear! I shall be late!" But when the Rabbit actually took a watch out of its waistcoat-pocket, and looked at it, and then hurried on, Alice started to her feet.</p>
       <p>Burning with curiosity, she ran across the field after it, and fortunately was just in time to see it pop down a large rabbit-hole under the hedge. In another moment down went Alice after it, never once considering how in the world she was to get out again.</p>
     </div>
-    <div class="chapter-page chapter-continuation">
+    <div class="chapter-page">
       <p>The rabbit-hole went straight on like a tunnel for some way, and then dipped suddenly down, so suddenly that Alice had not a moment to think about stopping herself before she found herself falling down a very deep well.</p>
       <p>Either the well was very deep, or she fell very slowly, for she had plenty of time as she went down to look about her and to wonder what was going to happen next. She looked at the sides of the well, and noticed that they were filled with cupboards and book-shelves; here and there she saw maps and pictures hung upon pegs.</p>
       <p>Down, down, down. Would the fall never come to an end? Alice wondered how many miles she had fallen and whether she might come out among the people who walked with their heads downward. There was nothing else to do, so she soon began talking again about Dinah, her cat.</p>
@@ -58,7 +58,7 @@ const aliceLongFormHtml = `<article class="book">
       <p>Poor Alice! It was as much as she could do, lying down on one side, to look through into the garden with one eye; but to get through was more hopeless than ever. She sat down and began to cry again.</p>
       <p>She went on shedding gallons of tears, until there was a large pool all round her, about four inches deep and reaching half down the hall. After a time she heard a little pattering of feet in the distance, and hastily dried her eyes to see what was coming.</p>
     </div>
-    <div class="chapter-page chapter-continuation">
+    <div class="chapter-page">
       <p>It was the White Rabbit returning, splendidly dressed, with a pair of white kid gloves in one hand and a large fan in the other. Alice began, in a low, timid voice, "If you please, sir--" The Rabbit started violently, dropped the gloves and the fan, and hurried away into the darkness.</p>
       <p>Alice took up the fan and gloves. "Dear, dear! How queer everything is today! And yesterday things went on just as usual. I wonder if I've been changed in the night?"</p>
       <p>As she said these words her foot slipped, and in another moment, splash! she was up to her chin in salt water. She soon made out that she was in the pool of tears which she had wept when she was nine feet high.</p>
@@ -73,7 +73,7 @@ const aliceLongFormHtml = `<article class="book">
       <p>At last the Mouse, who seemed to be a person of authority among them, called out, "Sit down, all of you, and listen to me! I'll soon make you dry enough!" They all sat down at once, in a large ring, with the Mouse in the middle.</p>
       <p>The Mouse began the driest thing it knew, a history of William the Conqueror, but Alice remained as wet as ever. In that case, said the Dodo solemnly, the meeting ought to adopt more energetic remedies.</p>
     </div>
-    <div class="chapter-page chapter-continuation">
+    <div class="chapter-page">
       <p>"What I was going to say," said the Dodo in an offended tone, "was that the best thing to get us dry would be a Caucus-race." Alice asked what a Caucus-race was. The Dodo replied that the best way to explain it was to do it.</p>
       <p>First it marked out a race-course, in a sort of circle--the exact shape did not matter--and then all the party were placed along the course, here and there. There was no "One, two, three, and away," but they began running when they liked and left off when they liked.</p>
       <p>When they had been running half an hour or so, and were quite dry again, the Dodo suddenly called out, "The race is over!" They all crowded round it, panting, and asking, "But who has won?"</p>
@@ -193,7 +193,7 @@ export const galleryExamples = [
       "Generated running text and counters may be absent from the PDF."
     ],
     html: aliceLongFormHtml,
-    css: `@page front-matter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, lower-roman); font: 8pt Arial; } } @page chapter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, decimal); font: 8pt Arial; } } @page chapter:left { @top-left { content: string(chapter); font: 700 7pt Arial; } } @page chapter:right { @top-right { content: string(chapter); font: 700 7pt Arial; } } ${baseCss} body { font-size: 10pt; line-height: 1.45; } .book h1 { font-size: 22pt; } .front-matter { page: front-matter; } .title-page { break-after: page; padding-top: 25mm; } .book-author { color: #c9472d; font: 700 13pt Arial; } .book-deck { margin-top: 14mm; font-size: 13pt; line-height: 1.4; } .source-note, .reader-note { margin-top: 18mm; color: #536871; font: 8pt/1.5 Arial; } .source-note a { color: #126c86; } .contents-page { break-before: page; } .contents { margin: 12mm 0 0; padding: 0; list-style-position: inside; font: 700 12pt/2 Arial; } .chapter { page: chapter; break-before: page; } .chapter-start { counter-reset: page 1; } .chapter h1 { string-set: chapter content(text); } .chapter p { margin-bottom: 3mm; } .chapter-continuation { break-before: page; }`
+    css: `@page front-matter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, lower-roman); font: 8pt Arial; } } @page chapter { size: A5; margin: 18mm 16mm 20mm; @bottom-center { content: counter(page, decimal); font: 8pt Arial; } } @page chapter:left { @top-left { content: string(chapter); font: 700 7pt Arial; } } @page chapter:right { @top-right { content: string(chapter); font: 700 7pt Arial; } } ${baseCss} body { font-size: 11.5pt; line-height: 1.6; } .book h1 { font-size: 22pt; } .front-matter { page: front-matter; } .title-page { break-after: page; padding-top: 25mm; } .book-author { color: #c9472d; font: 700 13pt Arial; } .book-deck { margin-top: 14mm; font-size: 13pt; line-height: 1.4; } .source-note, .reader-note { margin-top: 18mm; color: #536871; font: 8pt/1.5 Arial; } .source-note a { color: #126c86; } .contents-page { break-before: page; } .contents { margin: 12mm 0 0; padding: 0; list-style-position: inside; font: 700 12pt/2 Arial; } .chapter { page: chapter; break-before: page; } .chapter-start { counter-reset: page 1; } .chapter h1 { string-set: chapter content(text); } .chapter p { margin-bottom: 3mm; }`
   },
   {
     id: "footnotes",

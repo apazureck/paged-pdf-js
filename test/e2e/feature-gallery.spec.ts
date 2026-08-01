@@ -89,6 +89,7 @@ test("changes running chapter headers and restarts page numbering", async ({
       ];
       return {
         className: element.getAttribute("class") ?? "",
+        physicalPageNumber: Number(element.getAttribute("data-page-number")),
         counterReset: getComputedStyle(element).counterReset,
         footer: generatedContent(
           ".pagedjs_margin-bottom-center .pagedjs_margin-content"
@@ -111,16 +112,30 @@ test("changes running chapter headers and restarts page numbering", async ({
     className.includes("pagedjs_chapter_page")
   );
   expect(chapterPages[0]?.counterReset).toBe("page 1");
+  expect(chapterPages[0]?.physicalPageNumber).toBeGreaterThan(
+    frontMatterPages.length
+  );
   expect(new Set(chapterPages.map(({ footer }) => footer))).toEqual(
     new Set(["counter(page)"])
   );
 
-  for (const title of [
+  const chapterTitles = [
     "Chapter I: Down the Rabbit-Hole",
     "Chapter II: The Pool of Tears",
     "Chapter III: A Caucus-Race and a Long Tale"
-  ]) {
-    expect(chapterPages.filter(({ header }) => header.includes(title))).toHaveLength(
+  ];
+  const headers = chapterPages.map(({ header }) => header);
+  const headerTransitions = headers.filter(
+    (header, index) => index === 0 || header !== headers[index - 1]
+  );
+  expect(headerTransitions).toEqual(
+    chapterTitles.map((title) => `"${title}"`)
+  );
+
+  for (const title of chapterTitles) {
+    expect(
+      chapterPages.filter(({ header }) => header.includes(title)).length
+    ).toBeGreaterThanOrEqual(
       2
     );
   }
