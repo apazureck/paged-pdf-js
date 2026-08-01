@@ -591,14 +591,34 @@ def invoke_extractor(script_name: str, token: str) -> None:
 
 def deploy(root: Path) -> None:
     settings = configuration()
-    files = run_deployment_stage(
-        "prepare-release",
-        lambda: release_files(root),
-    )
+    files = release_files(root)
     with tempfile.TemporaryDirectory(prefix="paged-pdf-deploy-") as temporary:
+        archive, script, token = run_deployment_stage(
+            "prepare-release-controls",
+            lambda: create_controls(
+                files,
+                settings,
+                Path(temporary),
+            ),
+        )
         with Ftps(settings) as ftps:
             verify_web_root(ftps, Path(temporary))
-            activate_ftps_release(ftps, files, settings)
+            try:
+                run_deployment_stage(
+                    "upload-archive",
+                    lambda: ftps.upload(archive, archive.name),
+                )
+                run_deployment_stage(
+                    "upload-extractor",
+                    lambda: ftps.upload(script, script.name),
+                )
+                run_deployment_stage(
+                    "activate-release",
+                    lambda: invoke_extractor(script.name, token),
+                )
+            finally:
+                ftps.delete(archive.name)
+                ftps.delete(script.name)
 
 
 def main(arguments: list[str]) -> int:

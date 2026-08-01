@@ -514,15 +514,14 @@ $status = 500;
 try {
     set_time_limit(300);
     $lockPath = deploymentLockPath(hash('sha256', __DIR__));
+    $previousUmask = umask(0077);
     $lock = fopen($lockPath, 'c');
+    umask($previousUmask);
     if ($lock === false) {
         throw new RuntimeException('lock-unavailable');
     }
     if (!flock($lock, LOCK_EX | LOCK_NB)) {
         throw new RuntimeException('deployment-locked');
-    }
-    if (!chmod($lockPath, 0600)) {
-        throw new RuntimeException('write-failed');
     }
     if (!class_exists(ZipArchive::class) || !is_file($archivePath)) {
         throw new RuntimeException('archive-unavailable');
