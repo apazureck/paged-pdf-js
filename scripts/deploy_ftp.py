@@ -13,6 +13,7 @@ import ssl
 import sys
 import tempfile
 import urllib.error
+import urllib.parse
 import urllib.request
 import zipfile
 from collections.abc import Callable
@@ -285,6 +286,36 @@ class Ftps:
                 raise
 
 
+def verify_web_root(ftps: Ftps, directory: Path) -> None:
+    """Verify that the selected FTPS directory is served by the public site."""
+    suffix = secrets.token_hex(12)
+    expected = secrets.token_hex(32).encode("ascii")
+    probe_name = f"paged-pdf-web-root-{suffix}.txt"
+    probe_path = directory / probe_name
+    probe_path.write_bytes(expected)
+
+    try:
+        run_deployment_stage(
+            "upload-web-root-probe",
+            lambda: ftps.upload(probe_path, probe_name),
+        )
+
+        def fetch_probe() -> None:
+            request = urllib.request.Request(
+                f"{SITE_URL}{urllib.parse.quote(probe_name, safe='')}",
+                method="GET",
+                headers={"Cache-Control": "no-cache"},
+            )
+            with urllib.request.urlopen(request, timeout=60) as response:
+                payload = response.read(len(expected) + 1)
+                if response.status != 200 or payload != expected:
+                    raise RuntimeError("The public web root does not match FTPS.")
+
+        run_deployment_stage("verify-web-root", fetch_probe)
+    finally:
+        ftps.delete(probe_name)
+
+
 def invoke_extractor(script_name: str, token: str) -> None:
     request = urllib.request.Request(
         f"{SITE_URL}{script_name}",
@@ -305,8 +336,34 @@ def invoke_extractor(script_name: str, token: str) -> None:
             category = str(payload.get("error", "remote-extraction-failed"))
         except (AttributeError, UnicodeDecodeError, json.JSONDecodeError):
             category = "remote-extraction-failed"
+        safe_categories = {
+            "archive-checksum-failed",
+            "archive-unavailable",
+            "deployment-locked",
+            "invalid-archive",
+            "invalid-control",
+            "invalid-manifest",
+            "not-found",
+            "rollback-failed",
+            "stale-cleanup-failed",
+            "unsafe-destination",
+            "unsafe-parent",
+            "write-failed",
+        }
+        result = (
+            f"extractor-{category}"
+            if category in safe_categories
+            else f"http-{error.code}"
+            if 400 <= error.code <= 599
+            else "http-error"
+        )
+        print(f"Deployment activation result: {result}.", flush=True)
         raise RuntimeError(f"Remote extraction failed: {category}.") from error
+    except urllib.error.URLError as error:
+        print("Deployment activation result: network-error.", flush=True)
+        raise RuntimeError("Remote extraction request failed.") from error
     if status != 200 or payload != {"ok": True}:
+        print("Deployment activation result: invalid-response.", flush=True)
         raise RuntimeError("Remote extraction returned an invalid response.")
 
 
@@ -323,6 +380,7 @@ def deploy(root: Path) -> None:
             ),
         )
         with Ftps(settings) as ftps:
+            verify_web_root(ftps, Path(temporary))
             try:
                 run_deployment_stage(
                     "upload-archive",
