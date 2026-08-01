@@ -63,6 +63,41 @@ test("deep links and synchronizes the selected example", async ({ page }) => {
   );
   await expect(page.getByTestId("status")).toContainText(/[1-9]\d* pages?/u);
 
+  const preview = page.frameLocator("#paged-preview");
+  const reportPreviewGeometry = await preview
+    .locator(".pagedjs_report_page")
+    .evaluate((element) => {
+      const pageBounds = element.getBoundingClientRect();
+      const sheetBounds = element
+        .querySelector<HTMLElement>(".pagedjs_sheet")!
+        .getBoundingClientRect();
+      const pageboxBounds = element
+        .querySelector<HTMLElement>(".pagedjs_pagebox")!
+        .getBoundingClientRect();
+      const contentBounds = element
+        .querySelector<HTMLElement>(".pagedjs_page_content")!
+        .getBoundingClientRect();
+      return {
+        pageWidth: pageBounds.width,
+        pageHeight: pageBounds.height,
+        sheetWidth: sheetBounds.width,
+        sheetRight: sheetBounds.right,
+        pageboxWidth: pageboxBounds.width,
+        contentRight: contentBounds.right
+      };
+    });
+
+  expect(reportPreviewGeometry.pageWidth).toBeGreaterThan(
+    reportPreviewGeometry.pageHeight
+  );
+  expect(reportPreviewGeometry.sheetWidth).toBeCloseTo(
+    reportPreviewGeometry.pageboxWidth,
+    1
+  );
+  expect(reportPreviewGeometry.contentRight).toBeLessThanOrEqual(
+    reportPreviewGeometry.sheetRight + 1
+  );
+
   const namedDownloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download PDF" }).click();
   const namedDownload = await namedDownloadPromise;
