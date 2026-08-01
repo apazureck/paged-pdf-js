@@ -300,6 +300,24 @@ function imageCommand(
   };
 }
 
+interface TextFragment {
+  readonly text: string;
+  readonly start: number;
+  readonly end: number;
+}
+
+function* splitTextFragments(
+  text: string,
+  start: number
+): Generator<TextFragment> {
+  let offset = start;
+  for (const unit of text) {
+    const end = offset + unit.length;
+    yield { text: unit, start: offset, end };
+    offset = end;
+  }
+}
+
 async function addTextCommands(
   root: HTMLElement,
   page: Rectangle,
@@ -340,20 +358,43 @@ async function addTextCommands(
         range.setEnd(textNode, start + text.length);
         const rectangles = Array.from(range.getClientRects());
         range.detach();
-        for (const rectangle of rectangles) {
-          await consumeTextOperation(budget, signal);
-          const relative = relativeRectangle(rectangle, page);
-          if (relative !== undefined) {
-            collector.add({
-              kind: "text",
-              text: transformedText(text, style.textTransform),
-              x: relative.left,
-              y: relative.top,
-              fontFamily: fontFamily(style),
-              fontStyle: fontStyle(style),
-              fontSize: Number.parseFloat(style.fontSize) || 16,
-              color
-            });
+        const fragments: Iterable<TextFragment> =
+          rectangles.length <= 1
+            ? [{ text, start, end: start + text.length }]
+            : splitTextFragments(text, start);
+
+        for (const fragment of fragments) {
+          let fragmentRectangles = rectangles;
+          if (rectangles.length > 1) {
+            await consumeTextOperation(budget, signal);
+            const fragmentRange = document.createRange();
+            fragmentRange.setStart(textNode, fragment.start);
+            fragmentRange.setEnd(textNode, fragment.end);
+            fragmentRectangles = Array.from(
+              fragmentRange.getClientRects()
+            ).slice(0, 1);
+            fragmentRange.detach();
+          }
+          for (const rectangle of fragmentRectangles) {
+            await consumeTextOperation(budget, signal);
+            const relative = relativeRectangle(rectangle, page);
+            if (relative !== undefined) {
+              const transformed =
+                style.textTransform === "capitalize" &&
+                fragment.start !== start
+                  ? fragment.text
+                  : transformedText(fragment.text, style.textTransform);
+              collector.add({
+                kind: "text",
+                text: transformed,
+                x: relative.left,
+                y: relative.top,
+                fontFamily: fontFamily(style),
+                fontStyle: fontStyle(style),
+                fontSize: Number.parseFloat(style.fontSize) || 16,
+                color
+              });
+            }
           }
         }
       }
