@@ -339,6 +339,7 @@ def invoke_extractor(script_name: str, token: str) -> None:
         safe_categories = {
             "archive-checksum-failed",
             "archive-unavailable",
+            "lock-unavailable",
             "deployment-locked",
             "invalid-archive",
             "invalid-control",

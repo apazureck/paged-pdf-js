@@ -340,6 +340,8 @@ describe("one-shot PHP extractor", () => {
 
     expect(template).not.toContain("@unlink($lockPath)");
     expect(template).not.toContain("@unlink($stale)");
+    expect(template).toContain("throw new RuntimeException('lock-unavailable')");
+    expect(template).toContain("throw new RuntimeException('deployment-locked')");
     expect(template).toContain("backupLiveFiles");
     expect(template).toContain("rollbackRelease");
     expect(template).toContain("'rollback-failed'");
