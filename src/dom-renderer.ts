@@ -75,12 +75,15 @@ async function consumeTextOperation(
 }
 
 function measurePage(element: HTMLElement): Rectangle {
-  const bounds = element.getBoundingClientRect();
-  const style = getComputedStyle(element);
+  const pagebox = element.matches(".pagedjs_pagebox")
+    ? element
+    : (element.querySelector<HTMLElement>(".pagedjs_pagebox") ?? element);
+  const bounds = pagebox.getBoundingClientRect();
+  const style = getComputedStyle(pagebox);
   const width =
-    bounds.width || element.offsetWidth || Number.parseFloat(style.width);
+    bounds.width || pagebox.offsetWidth || Number.parseFloat(style.width);
   const height =
-    bounds.height || element.offsetHeight || Number.parseFloat(style.height);
+    bounds.height || pagebox.offsetHeight || Number.parseFloat(style.height);
   if (
     !Number.isFinite(width) ||
     width <= 0 ||
