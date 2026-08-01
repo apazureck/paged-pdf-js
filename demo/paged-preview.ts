@@ -1,5 +1,6 @@
 import { Previewer } from "pagedjs";
 import { pagedDomToPdf } from "../src/index.js";
+import { synchronizePagedPageDimensions } from "./paged-preview-layout.js";
 import { replaceRenderHost } from "./render-host.js";
 
 interface RenderMessage {
@@ -141,9 +142,8 @@ async function render(message: RenderMessage): Promise<void> {
       return;
     }
 
-    const sheet = host.querySelector<HTMLElement>(".pagedjs_sheet");
     const htmlPageCount = host.querySelectorAll(".pagedjs_page").length;
-    naturalPageWidth = sheet?.getBoundingClientRect().width ?? 0;
+    naturalPageWidth = synchronizePagedPageDimensions(host);
     const result = await pagedDomToPdf(host, {
       signal: controller.signal,
       metadata: {
